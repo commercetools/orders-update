@@ -1,0 +1,14 @@
+# Logs
+*.log
+
+# Dependencies
+node_modules
+.npm
+
+# Build artifacts
+dist
+coverage
+.nyc_output
+
+# OS clutter
+.DS_Store

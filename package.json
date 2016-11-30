@@ -1,0 +1,90 @@
+{
+  "name": "orders-update",
+  "version": "1.0.0",
+  "description": "Library that helps with updating orders into the commercetools platform.",
+  "keywords": [
+    "commercetools",
+    "orders",
+    "update"
+  ],
+  "homepage": "https://github.com/commercetools/orders-update#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/commercetools/orders-update.git"
+  },
+  "bugs": "https://github.com/commercetools/orders-update/issues",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "start": "npm run test:watch",
+    "test": "cross-env NODE_ENV=test NODE_PATH=./src babel-node node_modules/.bin/tape tests/**/*.spec.js | tap-spec",
+    "test:watch": "chokidar src tests -c 'npm test'",
+    "build": "npm run clean && babel src -d dist",
+    "clean": "rimraf dist/*",
+    "commit": "git-cz",
+    "codecov": "cat ./coverage/lcov.info | codecov",
+    "coverage": "npm run lint && npm run clean && cross-env NODE_ENV=test nyc --reporter=lcov --reporter=text npm test",
+    "coverage:html": "npm run lint && cross-env NODE_ENV=test nyc --reporter=html npm test",
+    "lint": "./scripts/lint src tests"
+  },
+  "dependencies": {
+    "sphere-node-sdk": "^1.16.2",
+    "underscore": "^1.8.3",
+    "underscore-mixins": "^0.1.4"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.14.0",
+    "babel-eslint": "^7.1.1",
+    "babel-plugin-istanbul": "^3.0.0",
+    "babel-preset-es2015": "^6.14.0",
+    "chokidar-cli": "^1.2.0",
+    "codecov": "^1.0.1",
+    "commitizen": "^2.8.6",
+    "cross-env": "^3.1.3",
+    "cz-conventional-changelog": "^1.2.0",
+    "eslint": "^3.6.0",
+    "eslint-config-airbnb": "^12.0.0",
+    "eslint-config-commercetools": "^4.0.0",
+    "eslint-plugin-jsx-a11y": "^2.2.2",
+    "eslint-plugin-react": "^6.3.0",
+    "eslint-formatter-pretty": "^1.0.0",
+    "eslint-plugin-import": "^1.16.0",
+    "ghooks": "^1.3.2",
+    "nyc": "^10.0.0",
+    "rimraf": "^2.5.4",
+    "tap-spec": "^4.1.1",
+    "tape": "^4.6.0",
+    "validate-commit-msg": "^2.8.0"
+  },
+  "config": {
+    "commitizen": {
+      "path": "cz-conventional-changelog"
+    },
+    "ghooks": {
+      "commit-msg": "validate-commit-msg",
+      "pre-commit": "./scripts/lint-staged-files"
+    }
+  },
+  "eslintConfig": {
+    "extends": "commercetools",
+    "settings": {
+      "import/resolver": {
+        "node": {
+          "paths": [
+            "src/"
+          ]
+        }
+      }
+    }
+  },
+  "nyc": {
+    "include": [
+      "src/*.js"
+    ],
+    "sourceMap": false,
+    "instrument": false
+  }
+}
