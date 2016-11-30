@@ -1,0 +1,16 @@
+{
+  "name": {
+    "nl": "selwyn"
+  },
+  "productType": {
+    "key": "my-vulcano"
+  },
+  "slug": {
+    "cartoon": "kaboom"
+  },
+  "variants": [
+    {
+      "sku": "hobbes"
+    }
+  ]
+}
