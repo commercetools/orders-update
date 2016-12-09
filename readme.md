@@ -32,7 +32,7 @@ sphere-node-cli -t order -p my-project-key -f ./orders.json
 
 If you want more control, you can also use this library directly in JavaScript. To do this you first need to install it:
 ```
-npm install @commercetools/orders-update --save-dev
+npm install @commercetools/orders-update --save
 ```
 Then you can use it to update an order like so:
 ```

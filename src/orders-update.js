@@ -45,9 +45,9 @@ export default class OrdersUpdate {
       .where(`orderNumber="${order.orderNumber}"`)
       .fetch()
       .then(({ body: { total, results: existingOrders } }) => {
-        if (total > 0) {
+        if (total === 1) {
           const orderSync = new OrderSync()
-          const [existingOrder] = existingOrders
+          const existingOrder = existingOrders[0]
 
           const actions = orderSync.buildActions(order, existingOrder)
 

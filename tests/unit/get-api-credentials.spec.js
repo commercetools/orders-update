@@ -2,7 +2,7 @@ import getApiCredentials from 'get-api-credentials'
 import test from 'tape'
 
 const PROJECT_KEY =
-  process.env.CM_PROJECT_KEY || process.env.npm_config_projectkey
+  process.env.CT_PROJECT_KEY || process.env.npm_config_projectkey
 
 test('getApiCredentials should exist', (t) => {
   t.ok(getApiCredentials)

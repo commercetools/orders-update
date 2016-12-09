@@ -1,5 +1,4 @@
 import { ProjectCredentialsConfig } from 'sphere-node-utils'
-import Promise from 'bluebird'
 
 const getApiCredentials = (projectKey, accessToken) => {
   if (!projectKey)

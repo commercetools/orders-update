@@ -51,7 +51,7 @@
     "cz-conventional-changelog": "^1.2.0",
     "eslint": "^3.6.0",
     "eslint-config-airbnb": "^12.0.0",
-    "eslint-config-commercetools": "^4.0.0",
+    "eslint-config-commercetools": "^5.0.0",
     "eslint-formatter-pretty": "^1.0.0",
     "eslint-plugin-import": "^1.16.0",
     "eslint-plugin-jsx-a11y": "^2.2.2",

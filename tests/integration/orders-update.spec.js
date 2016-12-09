@@ -8,7 +8,7 @@ import orderSample from '../helpers/order-sample.json'
 import stateSamples from '../helpers/state-samples.json'
 
 const PROJECT_KEY =
-  process.env.CM_PROJECT_KEY || process.env.npm_config_projectkey
+  process.env.CT_PROJECT_KEY || process.env.npm_config_projectkey
 
 // Delete all API items from a given endpoint
 const deleteAllApiItems = (client, service) => client[service]

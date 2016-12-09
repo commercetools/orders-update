@@ -6,7 +6,7 @@ import test from 'tape'
 import orderSample from '../helpers/order-sample.json'
 
 const PROJECT_KEY =
-  process.env.CM_PROJECT_KEY || process.env.npm_config_projectkey
+  process.env.CT_PROJECT_KEY || process.env.npm_config_projectkey
 
 const apiClientConfig = {
   config: {
