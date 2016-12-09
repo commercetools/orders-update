@@ -14,7 +14,7 @@
   },
   "bugs": "https://github.com/commercetools/orders-update/issues",
   "license": "MIT",
-  "main": "dist/index.js",
+  "main": "dist/main.js",
   "files": [
     "dist"
   ],

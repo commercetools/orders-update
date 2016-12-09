@@ -1,4 +1,4 @@
-import OrdersUpdate from 'index'
+import OrdersUpdate from 'main'
 import sinon from 'sinon'
 import { SphereClient } from 'sphere-node-sdk'
 import test from 'tape'
@@ -29,7 +29,7 @@ test(`OrdersUpdate
 
   t.true(
     client instanceof SphereClient,
-    'OrdersUpdate is an instanceof SphereClient'
+    'OrdersUpdate is an instanceof SphereClient',
   )
   t.end()
 })
@@ -58,7 +58,7 @@ test(`validateOrderData
   const importer = new OrdersUpdate(apiClientConfig)
   importer.validateOrderData({ id: {} })
     .then(t.fail)
-    .catch(() => t.end())
+    .catch(error => t.end(!error.match(/Validation/)))
 })
 
 test(`processStream
@@ -81,7 +81,7 @@ test(`processStream
     .then(() => {
       t.equal(
         mockProcessOrder.callCount, orders.length,
-        'processOrder gets called for each order'
+        'processOrder gets called for each order',
       )
 
       t.end()
@@ -105,11 +105,11 @@ test(`processOrder
     .then(() => {
       t.equal(
         importer.summary.errors[0].error, 'validate kaboom',
-        'importer summary contains validate error'
+        'importer summary contains validate error',
       )
       t.equal(
         importer.summary.errors[1].error, 'update kaboom',
-        'importer summary contains update error'
+        'importer summary contains update error',
       )
       t.end()
     })
@@ -137,12 +137,12 @@ test(`updateOrder
   importer.updateOrder(orderSample).then(() => {
     t.equal(
       importer.summary.successfullImports, 1,
-      'one order should be imported successfully'
+      'one order should be imported successfully',
     )
 
     t.equal(
       byIdStub.args[0][0], mockData.id,
-      'should call API with order ID to update'
+      'should call API with order ID to update',
     )
 
     t.end()
@@ -170,7 +170,7 @@ test(`updateOrder
   importer.updateOrder(orderSample).then(() => {
     t.equal(
       importer.summary.successfullImports, 1,
-      'one order should be imported successfully'
+      'one order should be imported successfully',
     )
 
     t.false(byIdStub.called, 'no call to the API should be made')
@@ -197,7 +197,7 @@ test(`updateOrder
     .catch((error) => {
       t.true(
         String(error).match(/not found/),
-        'return error with not found message'
+        'return error with not found message',
       )
       t.end()
     })

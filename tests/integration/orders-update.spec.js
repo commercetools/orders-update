@@ -1,5 +1,5 @@
 import getApiCredentials from 'get-api-credentials'
-import OrdersUpdate from 'index'
+import OrdersUpdate from 'main'
 import test from 'tape'
 
 import productTypeSample from '../helpers/product-type-sample.json'
@@ -17,8 +17,8 @@ const deleteAllApiItems = (client, service) => client[service]
   .then(items => Promise.all(
     items.map(item => client[service]
       .byId(item.id)
-      .delete(item.version))
-  )
+      .delete(item.version)),
+  ),
 )
 
 test('the module should modify an existing order', (t) => {
@@ -71,7 +71,7 @@ test('the module should modify an existing order', (t) => {
     })
     .then(order => ordersUpdate.client.orders
       .where(`orderNumber="${order.orderNumber}"`)
-      .fetch()
+      .fetch(),
     )
     // Check if data is modified as expected
     .then(({ body: { results: orders } }) => {
@@ -79,12 +79,12 @@ test('the module should modify an existing order', (t) => {
 
       t.equal(
         order.lineItems[0].state[0].quantity, 8999,
-        'quantity of line item should be modified'
+        'quantity of line item should be modified',
       )
 
       t.equal(
         order.lineItems[0].state[1].quantity, 2,
-        'quantity of line item should be modified'
+        'quantity of line item should be modified',
       )
 
       t.end()

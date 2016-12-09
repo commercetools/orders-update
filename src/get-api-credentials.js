@@ -11,7 +11,7 @@ const getApiCredentials = (projectKey, accessToken) => {
     .then(credentials =>
       credentials.enrichCredentials({
         project_key: projectKey,
-      })
+      }),
     )
 }
 
