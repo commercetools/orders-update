@@ -70,6 +70,14 @@
       "pre-commit": "./scripts/lint-staged-files"
     }
   },
+  "babel": {
+    "presets": ["es2015"],
+    "env": {
+      "test": {
+        "plugins": [ "istanbul" ]
+      }
+    }
+  },
   "eslintConfig": {
     "extends": "commercetools",
     "settings": {

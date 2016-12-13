@@ -1,3 +1,4 @@
+import bluebird from 'bluebird'
 import getApiCredentials from 'get-api-credentials'
 import OrdersUpdate from 'main'
 import test from 'tape'
@@ -11,15 +12,16 @@ const PROJECT_KEY =
   process.env.CT_PROJECT_KEY || process.env.npm_config_projectkey
 
 // Delete all API items from a given endpoint
-const deleteAllApiItems = (client, service) => client[service]
-  .all().fetch()
-  .then(data => data.body.results.filter(item => !item.builtIn))
-  .then(items => Promise.all(
-    items.map(item => client[service]
-      .byId(item.id)
-      .delete(item.version)),
-  ),
-)
+const clearEndpointData = (client, service) =>
+  client[service]
+    .all().fetch()
+    .then(data => data.body.results.filter(item => !item.builtIn))
+    .then(items => Promise.all(
+      items.map(item => client[service]
+        .byId(item.id)
+        .delete(item.version)),
+      ),
+    )
 
 test('the module should modify an existing order', (t) => {
   let ordersUpdate
@@ -31,10 +33,12 @@ test('the module should modify an existing order', (t) => {
       })
     })
     // Clean up, remove everything from used services in testing
-    .then(() => deleteAllApiItems(ordersUpdate.client, 'orders'))
-    .then(() => deleteAllApiItems(ordersUpdate.client, 'products'))
-    .then(() => deleteAllApiItems(ordersUpdate.client, 'productTypes'))
-    .then(() => deleteAllApiItems(ordersUpdate.client, 'states'))
+    .then(() =>
+      bluebird.each(
+        ['orders', 'products', 'productTypes', 'states'],
+        clearEndpointData.bind(null, ordersUpdate.client),
+      ),
+    )
     // Create needed data
     .then(() => ordersUpdate.client.productTypes.create(productTypeSample))
     .then(() => ordersUpdate.client.products.create(productSample))
