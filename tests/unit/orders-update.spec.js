@@ -1,4 +1,4 @@
-import OrdersUpdate from 'main'
+import OrdersUpdate from 'orders-update'
 import sinon from 'sinon'
 import { SphereClient } from 'sphere-node-sdk'
 import test from 'tape'
@@ -72,12 +72,11 @@ test(`processStream
 test(`processStream
   should call processOrder for each order in the given chunk`, (t) => {
   const mockProcessOrder = sinon.spy(() => {})
-  const callback = () => {}
   const orders = Array.from(new Array(10), () => ({ id: 'heya' }))
   const importer = new OrdersUpdate(apiClientConfig)
   sinon.stub(importer, 'processOrder', mockProcessOrder)
 
-  importer.processStream(orders, callback)
+  importer.processStream(orders, () => {})
     .then(() => {
       t.equal(
         mockProcessOrder.callCount, orders.length,
@@ -86,6 +85,42 @@ test(`processStream
 
       t.end()
     })
+})
+
+test(`processOrder
+  should update an existing order`, (t) => {
+  const importer = new OrdersUpdate(apiClientConfig)
+  const mockData = { id: '53 65 6c 77 79 6e' }
+
+  sinon.stub(importer.client.orders, 'where', () => ({
+    fetch: () => Promise.resolve({
+      body: {
+        total: 1,
+        results: [mockData],
+      },
+    }),
+  }))
+
+  sinon.stub(importer, 'buildUpdateActions', () => [true])
+
+  const byIdStub = sinon.stub(importer.client.orders, 'byId', () => ({
+    update: () => Promise.resolve(),
+  }))
+
+  importer.processOrder(orderSample).then(() => {
+    t.equal(
+      importer.summary.successfullImports, 1,
+      'one order should be imported successfully',
+    )
+
+    t.equal(
+      byIdStub.args[0][0], mockData.id,
+      'should call API with order ID to update',
+    )
+
+    t.end()
+  })
+  .catch(t.fail)
 })
 
 test(`processOrder
@@ -117,40 +152,6 @@ test(`processOrder
 })
 
 test(`updateOrder
-  should update an existing order`, (t) => {
-  const importer = new OrdersUpdate(apiClientConfig)
-  const mockData = { id: '53 65 6c 77 79 6e' }
-
-  sinon.stub(importer.client.orders, 'where', () => ({
-    fetch: () => Promise.resolve({
-      body: {
-        total: 1,
-        results: [mockData],
-      },
-    }),
-  }))
-
-  const byIdStub = sinon.stub(importer.client.orders, 'byId', () => ({
-    update: () => Promise.resolve(),
-  }))
-
-  importer.updateOrder(orderSample).then(() => {
-    t.equal(
-      importer.summary.successfullImports, 1,
-      'one order should be imported successfully',
-    )
-
-    t.equal(
-      byIdStub.args[0][0], mockData.id,
-      'should call API with order ID to update',
-    )
-
-    t.end()
-  })
-  .catch(t.fail)
-})
-
-test(`updateOrder
   should ignore an identical existing order`, (t) => {
   const importer = new OrdersUpdate(apiClientConfig)
 
@@ -168,11 +169,6 @@ test(`updateOrder
   }))
 
   importer.updateOrder(orderSample).then(() => {
-    t.equal(
-      importer.summary.successfullImports, 1,
-      'one order should be imported successfully',
-    )
-
     t.false(byIdStub.called, 'no call to the API should be made')
 
     t.end()
@@ -201,4 +197,102 @@ test(`updateOrder
       )
       t.end()
     })
+})
+
+test(`buildUpdateActions
+  should build actions`, (t) => {
+  const importer = new OrdersUpdate(apiClientConfig)
+  const order = Object.assign(
+    JSON.parse(JSON.stringify(orderSample)),
+    {
+      lineItems: [
+        {
+          id: 'the glitch mob',
+          state: [{
+            quantity: 1,
+            fromState: {
+              typeId: 'state',
+              id: '73;65;6c;77;79;6e',
+            },
+            toState: {
+              typeId: 'state',
+              id: 'other',
+            },
+            actualTransitionDate: '2016-12-23T18:00:00.000Z',
+          }],
+        },
+        {
+          id: 'nalepa monday',
+          state: [{
+            quantity: 3,
+            fromState: {
+              typeId: 'state',
+              id: 'wat',
+            },
+            toState: {
+              typeId: 'state',
+              id: 'patattekes',
+            },
+          }],
+        },
+      ],
+    },
+  )
+
+  const actions = importer.buildUpdateActions(order)
+
+  t.deepEqual(
+    actions,
+    [
+      {
+        action: 'transitionLineItemState',
+        lineItemId: 'the glitch mob',
+        quantity: 1,
+        fromState: {
+          typeId: 'state',
+          id: '73;65;6c;77;79;6e',
+        },
+        toState: {
+          typeId: 'state',
+          id: 'other',
+        },
+        actualTransitionDate: '2016-12-23T18:00:00.000Z',
+      },
+      {
+        action: 'transitionLineItemState',
+        lineItemId: 'nalepa monday',
+        quantity: 3,
+        fromState: {
+          typeId: 'state',
+          id: 'wat',
+        },
+        toState: {
+          typeId: 'state',
+          id: 'patattekes',
+        },
+      },
+    ],
+    'generated actions match expected data',
+  )
+
+  t.end()
+})
+
+test(`buildUpdateActions
+  should ignore lineItems without a state`, (t) => {
+  const importer = new OrdersUpdate(apiClientConfig)
+  const order = Object.assign(
+    JSON.parse(JSON.stringify(orderSample)),
+    {
+      lineItems: [{
+        id: '123',
+      }],
+    },
+  )
+
+  const actions = importer.buildUpdateActions(order)
+
+  t.deepEqual(actions, [], 'no actions are generated')
+
+  t.end()
 })

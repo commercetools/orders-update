@@ -1,6 +1,6 @@
 import bluebird from 'bluebird'
 import getApiCredentials from 'get-api-credentials'
-import OrdersUpdate from 'main'
+import OrdersUpdate from 'orders-update'
 import test from 'tape'
 
 import productTypeSample from '../helpers/product-type-sample.json'
@@ -68,6 +68,7 @@ test('the module should modify an existing order', (t) => {
             typeId: 'state',
             id: orderResult.body.lineItems[0].state[1].state.id,
           },
+          actualTransitionDate: '2016-12-23T18:00:00.000Z',
         },
       ]
 
