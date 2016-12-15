@@ -4,8 +4,6 @@ import { SphereClient } from 'sphere-node-sdk'
 
 import orderSchema from './order-schema'
 
-const ajv = new Ajv({ removeAdditional: true })
-
 export default class OrdersUpdate {
 
   constructor (apiClientConfig, logger) {
@@ -35,12 +33,13 @@ export default class OrdersUpdate {
   // validateOrderData :: Object -> Promise -> Object
   // eslint-disable-next-line class-methods-use-this
   validateOrderData (order) {
-    const validatedOrderData = ajv.compile(orderSchema)(order)
+    const ajv = new Ajv({ removeAdditional: true })
+    const ajvOrder = ajv.compile(orderSchema)
 
-    if (validatedOrderData)
+    if (ajvOrder(order))
       return Promise.resolve(order)
 
-    return Promise.reject(`Validation error: ${validatedOrderData.errors}`)
+    return Promise.reject(ajvOrder.errors)
   }
 
   // Wrapper function that validates and updates

@@ -8,12 +8,22 @@ import orderSample from '../helpers/order-sample.json'
 const PROJECT_KEY =
   process.env.CT_PROJECT_KEY || process.env.npm_config_projectkey
 
-const apiClientConfig = {
-  config: {
-    project_key: PROJECT_KEY,
-    client_id: '*********',
-    client_secret: '*********',
-  },
+const newOrdersUpdate = () => {
+  return new OrdersUpdate(
+    {
+      config: {
+        project_key: PROJECT_KEY,
+        client_id: '*********',
+        client_secret: '*********',
+      },
+    },
+    {
+      error: () => {},
+      warn: () => {},
+      info: () => {},
+      verbose: () => {},
+    }
+  )
 }
 
 test(`OrdersUpdate
@@ -25,7 +35,7 @@ test(`OrdersUpdate
 
 test(`OrdersUpdate
   should create a sphere client`, (t) => {
-  const client = new OrdersUpdate(apiClientConfig).client
+  const client = newOrdersUpdate().client
 
   t.true(
     client instanceof SphereClient,
@@ -36,9 +46,8 @@ test(`OrdersUpdate
 
 test(`summaryReport
   should contain no errors and no imports if nothing is imported`, (t) => {
-  const importer = new OrdersUpdate(apiClientConfig)
   const expected = { errors: [], inserted: [], successfullImports: 0 }
-  const actual = JSON.parse(importer.summaryReport())
+  const actual = JSON.parse(newOrdersUpdate().summaryReport())
 
   t.deepEqual(actual, expected, 'No errors if no import occurs')
 
@@ -47,25 +56,29 @@ test(`summaryReport
 
 test(`validateOrderData
   should resolve if the order data is valid`, (t) => {
-  const importer = new OrdersUpdate(apiClientConfig)
-  importer.validateOrderData(orderSample)
+  newOrdersUpdate().validateOrderData(orderSample)
     .then(() => t.end())
     .catch(t.fail)
 })
 
 test(`validateOrderData
   should reject if the order data is invalid`, (t) => {
-  const importer = new OrdersUpdate(apiClientConfig)
-  importer.validateOrderData({ id: {} })
+  newOrdersUpdate().validateOrderData({ id: true })
     .then(t.fail)
-    .catch(error => t.end(!error.match(/Validation/)))
+    .catch(errors => {
+      t.true(errors[0])
+      t.equal(
+        errors[0].message,
+        'should be string',
+        'should return error about ID\'s type',
+      )
+      t.end()
+    })
 })
 
 test(`processStream
   should exist, needed for compatibility with the CLI`, (t) => {
-  const importer = new OrdersUpdate(apiClientConfig)
-
-  t.true(importer.processStream)
+  t.true(newOrdersUpdate().processStream)
   t.end()
 })
 
@@ -73,7 +86,7 @@ test(`processStream
   should call processOrder for each order in the given chunk`, (t) => {
   const mockProcessOrder = sinon.spy(() => {})
   const orders = Array.from(new Array(10), () => ({ id: 'heya' }))
-  const importer = new OrdersUpdate(apiClientConfig)
+  const importer = newOrdersUpdate()
   sinon.stub(importer, 'processOrder', mockProcessOrder)
 
   importer.processStream(orders, () => {})
@@ -89,7 +102,7 @@ test(`processStream
 
 test(`processOrder
   should update an existing order`, (t) => {
-  const importer = new OrdersUpdate(apiClientConfig)
+  const importer = newOrdersUpdate()
   const mockData = { id: '53 65 6c 77 79 6e' }
 
   sinon.stub(importer.client.orders, 'where', () => ({
@@ -125,7 +138,7 @@ test(`processOrder
 
 test(`processOrder
   should push error to summary when error occurs`, (t) => {
-  const importer = new OrdersUpdate(apiClientConfig)
+  const importer = newOrdersUpdate()
 
   const validateStub = sinon.stub(importer, 'validateOrderData')
   validateStub.returns(Promise.reject('validate kaboom'))
@@ -153,7 +166,7 @@ test(`processOrder
 
 test(`updateOrder
   should ignore an identical existing order`, (t) => {
-  const importer = new OrdersUpdate(apiClientConfig)
+  const importer = newOrdersUpdate()
 
   sinon.stub(importer.client.orders, 'where', () => ({
     fetch: () => Promise.resolve({
@@ -178,7 +191,7 @@ test(`updateOrder
 
 test(`updateOrder
   should handle missing order`, (t) => {
-  const importer = new OrdersUpdate(apiClientConfig)
+  const importer = newOrdersUpdate()
 
   sinon.stub(importer.client.orders, 'where', () => ({
     fetch: () => Promise.resolve({
@@ -201,7 +214,6 @@ test(`updateOrder
 
 test(`buildUpdateActions
   should build actions`, (t) => {
-  const importer = new OrdersUpdate(apiClientConfig)
   const order = Object.assign(
     JSON.parse(JSON.stringify(orderSample)),
     {
@@ -239,7 +251,7 @@ test(`buildUpdateActions
     },
   )
 
-  const actions = importer.buildUpdateActions(order)
+  const actions = newOrdersUpdate().buildUpdateActions(order)
 
   t.deepEqual(
     actions,
@@ -280,7 +292,6 @@ test(`buildUpdateActions
 
 test(`buildUpdateActions
   should ignore lineItems without a state`, (t) => {
-  const importer = new OrdersUpdate(apiClientConfig)
   const order = Object.assign(
     JSON.parse(JSON.stringify(orderSample)),
     {
@@ -290,7 +301,7 @@ test(`buildUpdateActions
     },
   )
 
-  const actions = importer.buildUpdateActions(order)
+  const actions = newOrdersUpdate().buildUpdateActions(order)
 
   t.deepEqual(actions, [], 'no actions are generated')
 
