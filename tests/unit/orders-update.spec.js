@@ -82,15 +82,15 @@ test(`processStream
 
 test(`processStream
   should call processOrder for each order in the given chunk`, (t) => {
-  const mockProcessOrder = sinon.spy(() => {})
   const orders = Array.from(new Array(10), () => ({ id: 'heya' }))
   const importer = newOrdersUpdate()
-  sinon.stub(importer, 'processOrder', mockProcessOrder)
+  const processOrderStub = sinon.stub(importer, 'processOrder')
 
   importer.processStream(orders, () => {})
     .then(() => {
       t.equal(
-        mockProcessOrder.callCount, orders.length,
+        processOrderStub.callCount,
+        orders.length,
         'processOrder gets called for each order',
       )
 
