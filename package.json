@@ -28,11 +28,12 @@
     "test:watch": "chokidar src tests -c 'npm test'",
     "build": "npm run clean && babel src -d dist",
     "clean": "rimraf dist/*",
-    "commit": "git-cz",
     "codecov": "cat ./coverage/lcov.info | codecov",
     "coverage": "npm run lint && npm run clean && cross-env NODE_ENV=test nyc --reporter=lcov --reporter=text npm test",
     "coverage:html": "npm run lint && cross-env NODE_ENV=test nyc --reporter=html npm test",
-    "lint": "./scripts/lint src tests"
+    "lint": "./scripts/lint src tests",
+    "commit": "git-cz",
+    "prepublish": "npm run build"
   },
   "dependencies": {
     "ajv": "^4.9.0",
