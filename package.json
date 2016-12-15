@@ -7,6 +7,10 @@
     "orders",
     "update"
   ],
+  "author": {
+    "name": "Selwyn",
+    "email": "selwyn.versteeg@commercetools.com"
+  },
   "homepage": "https://github.com/commercetools/orders-update#readme",
   "repository": {
     "type": "git",

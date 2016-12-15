@@ -8,23 +8,21 @@ import orderSample from '../helpers/order-sample.json'
 const PROJECT_KEY =
   process.env.CT_PROJECT_KEY || process.env.npm_config_projectkey
 
-const newOrdersUpdate = () => {
-  return new OrdersUpdate(
-    {
-      config: {
-        project_key: PROJECT_KEY,
-        client_id: '*********',
-        client_secret: '*********',
-      },
+const newOrdersUpdate = () => new OrdersUpdate(
+  {
+    config: {
+      project_key: PROJECT_KEY,
+      client_id: '*********',
+      client_secret: '*********',
     },
-    {
-      error: () => {},
-      warn: () => {},
-      info: () => {},
-      verbose: () => {},
-    }
+  },
+  {
+    error: () => {},
+    warn: () => {},
+    info: () => {},
+    verbose: () => {},
+  },
   )
-}
 
 test(`OrdersUpdate
   should be an instance`, (t) => {
@@ -65,7 +63,7 @@ test(`validateOrderData
   should reject if the order data is invalid`, (t) => {
   newOrdersUpdate().validateOrderData({ id: true })
     .then(t.fail)
-    .catch(errors => {
+    .catch((errors) => {
       t.true(errors[0])
       t.equal(
         errors[0].message,
