@@ -8,8 +8,15 @@ const ajv = new Ajv({ removeAdditional: true })
 
 export default class OrdersUpdate {
 
-  constructor (apiClientConfig) {
+  constructor (apiClientConfig, logger) {
     this.client = new SphereClient(apiClientConfig)
+
+    this.logger = logger || {
+      error: process.stderr.write.bind(process.stderr),
+      warn: process.stderr.write.bind(process.stderr),
+      info: process.stdout.write.bind(process.stdout),
+      verbose: process.stdout.write.bind(process.stdout),
+    }
 
     this.summary = {
       errors: [],
@@ -18,10 +25,14 @@ export default class OrdersUpdate {
     }
   }
 
+  // Return JSON string of this.summary object
+  // summaryReport :: () -> String
   summaryReport () {
     return JSON.stringify(this.summary, null, 2)
   }
 
+  // Check if order data has required fields and correct types
+  // validateOrderData :: Object -> Promise -> Object
   // eslint-disable-next-line class-methods-use-this
   validateOrderData (order) {
     const validatedOrderData = ajv.compile(orderSchema)(order)
@@ -32,6 +43,8 @@ export default class OrdersUpdate {
     return Promise.reject(`Validation error: ${validatedOrderData.errors}`)
   }
 
+  // Wrapper function that validates and updates
+  // processOrder :: Object -> () -> Object
   processOrder (order) {
     return this.validateOrderData(order)
       .then(this.updateOrder.bind(this))
@@ -46,6 +59,8 @@ export default class OrdersUpdate {
       })
   }
 
+  // Update order calling the API
+  // updateOrder :: Object -> () -> Object
   updateOrder (order) {
     return this.client.orders
       .where(`orderNumber="${order.orderNumber}"`)
@@ -75,6 +90,8 @@ export default class OrdersUpdate {
   }
 
   // eslint-disable-next-line class-methods-use-this
+  // Create API action objects based on the order data
+  // buildUpdateActions :: Object -> [Object]
   buildUpdateActions (order) {
     const actions = []
 
@@ -100,10 +117,14 @@ export default class OrdersUpdate {
           })
       })
 
+    this.logger.verbose(`Build update actions: ${actions}`)
     return actions
   }
 
+  // Wrapper function for compatibility with the CLI
+  // processStream :: ([Object], Function) -> ()
   processStream (orders, next) {
+    this.logger.info('Starting order processing')
     // process batch
     return Promise.map(
       orders, order => this.processOrder(order),

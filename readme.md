@@ -62,6 +62,11 @@ ordersUpdate.processOrder(fs.readFileSync('./input.json'))
 `OrdersUpdate` accepts one object as an argument:
 - API client config (_required_)
   - See the [SDK documentation](http://sphereio.github.io/sphere-node-sdk/classes/SphereClient.html) for more information.
+- Logger takes object with four functions (_optional_)
+  - error
+  - warn
+  - info
+  - verbose
 
 ## Contributing
 See [contributing.md](contributing.md) for info on contributing.
