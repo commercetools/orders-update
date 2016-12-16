@@ -3,6 +3,8 @@ import sinon from 'sinon'
 import { SphereClient } from 'sphere-node-sdk'
 import test from 'tape'
 
+import buildOrderActions from '../../src/build-order-actions'
+
 import orderSample from '../helpers/order-sample.json'
 
 const PROJECT_KEY =
@@ -83,10 +85,10 @@ test(`processStream
 test(`processStream
   should call processOrder for each order in the given chunk`, (t) => {
   const orders = Array.from(new Array(10), () => ({ id: 'heya' }))
-  const importer = newOrdersUpdate()
-  const processOrderStub = sinon.stub(importer, 'processOrder')
+  const updater = newOrdersUpdate()
+  const processOrderStub = sinon.stub(updater, 'processOrder')
 
-  importer.processStream(orders, () => {})
+  updater.processStream(orders, () => {})
     .then(() => {
       t.equal(
         processOrderStub.callCount,
@@ -100,10 +102,10 @@ test(`processStream
 
 test(`processOrder
   should update an existing order`, (t) => {
-  const importer = newOrdersUpdate()
+  const updater = newOrdersUpdate()
   const mockData = { id: '53 65 6c 77 79 6e' }
 
-  sinon.stub(importer.client.orders, 'where', () => ({
+  sinon.stub(updater.client.orders, 'where', () => ({
     fetch: () => Promise.resolve({
       body: {
         total: 1,
@@ -112,15 +114,15 @@ test(`processOrder
     }),
   }))
 
-  sinon.stub(importer, 'buildUpdateActions', () => [true])
+  sinon.stub(updater, 'buildUpdateActions', () => [true])
 
-  const byIdStub = sinon.stub(importer.client.orders, 'byId', () => ({
+  const byIdStub = sinon.stub(updater.client.orders, 'byId', () => ({
     update: () => Promise.resolve(),
   }))
 
-  importer.processOrder(orderSample).then(() => {
+  updater.processOrder(orderSample).then(() => {
     t.equal(
-      importer.summary.successfullImports, 1,
+      updater.summary.successfullImports, 1,
       'one order should be imported successfully',
     )
 
@@ -136,26 +138,26 @@ test(`processOrder
 
 test(`processOrder
   should push error to summary when error occurs`, (t) => {
-  const importer = newOrdersUpdate()
+  const updater = newOrdersUpdate()
 
-  const validateStub = sinon.stub(importer, 'validateOrderData')
+  const validateStub = sinon.stub(updater, 'validateOrderData')
   validateStub.returns(Promise.reject('validate kaboom'))
   validateStub.onCall(1).returns(Promise.resolve())
 
-  importer.processOrder(orderSample)
+  updater.processOrder(orderSample)
     .catch(t.fail)
 
-  sinon.stub(importer, 'updateOrder', () => Promise.reject('update kaboom'))
+  sinon.stub(updater, 'updateOrder', () => Promise.reject('update kaboom'))
 
-  importer.processOrder(orderSample)
+  updater.processOrder(orderSample)
     .then(() => {
       t.equal(
-        importer.summary.errors[0].error, 'validate kaboom',
-        'importer summary contains validate error',
+        updater.summary.errors[0].error, 'validate kaboom',
+        'updater summary contains validate error',
       )
       t.equal(
-        importer.summary.errors[1].error, 'update kaboom',
-        'importer summary contains update error',
+        updater.summary.errors[1].error, 'update kaboom',
+        'updater summary contains update error',
       )
       t.end()
     })
@@ -164,9 +166,9 @@ test(`processOrder
 
 test(`updateOrder
   should ignore an identical existing order`, (t) => {
-  const importer = newOrdersUpdate()
+  const updater = newOrdersUpdate()
 
-  sinon.stub(importer.client.orders, 'where', () => ({
+  sinon.stub(updater.client.orders, 'where', () => ({
     fetch: () => Promise.resolve({
       body: {
         total: 1,
@@ -175,11 +177,11 @@ test(`updateOrder
     }),
   }))
 
-  const byIdStub = sinon.stub(importer.client.orders, 'byId', () => ({
+  const byIdStub = sinon.stub(updater.client.orders, 'byId', () => ({
     update: () => Promise.resolve(),
   }))
 
-  importer.updateOrder(orderSample).then(() => {
+  updater.updateOrder(orderSample).then(() => {
     t.false(byIdStub.called, 'no call to the API should be made')
 
     t.end()
@@ -189,9 +191,9 @@ test(`updateOrder
 
 test(`updateOrder
   should handle missing order`, (t) => {
-  const importer = newOrdersUpdate()
+  const updater = newOrdersUpdate()
 
-  sinon.stub(importer.client.orders, 'where', () => ({
+  sinon.stub(updater.client.orders, 'where', () => ({
     fetch: () => Promise.resolve({
       body: {
         total: 0,
@@ -199,7 +201,7 @@ test(`updateOrder
     }),
   }))
 
-  importer.updateOrder(orderSample)
+  updater.updateOrder(orderSample)
     .then(t.fail)
     .catch((error) => {
       t.true(
@@ -211,97 +213,22 @@ test(`updateOrder
 })
 
 test(`buildUpdateActions
-  should build actions`, (t) => {
-  const order = Object.assign(
-    JSON.parse(JSON.stringify(orderSample)),
-    {
-      lineItems: [
-        {
-          id: 'the glitch mob',
-          state: [{
-            quantity: 1,
-            fromState: {
-              typeId: 'state',
-              id: '73;65;6c;77;79;6e',
-            },
-            toState: {
-              typeId: 'state',
-              id: 'other',
-            },
-            actualTransitionDate: '2016-12-23T18:00:00.000Z',
-          }],
-        },
-        {
-          id: 'nalepa monday',
-          state: [{
-            quantity: 3,
-            fromState: {
-              typeId: 'state',
-              id: 'wat',
-            },
-            toState: {
-              typeId: 'state',
-              id: 'patattekes',
-            },
-          }],
-        },
-      ],
-    },
-  )
+  should ignore fields without a action building function`, (t) => {
+  const actions = newOrdersUpdate().buildUpdateActions({ noop: true })
 
-  const actions = newOrdersUpdate().buildUpdateActions(order)
-
-  t.deepEqual(
-    actions,
-    [
-      {
-        action: 'transitionLineItemState',
-        lineItemId: 'the glitch mob',
-        quantity: 1,
-        fromState: {
-          typeId: 'state',
-          id: '73;65;6c;77;79;6e',
-        },
-        toState: {
-          typeId: 'state',
-          id: 'other',
-        },
-        actualTransitionDate: '2016-12-23T18:00:00.000Z',
-      },
-      {
-        action: 'transitionLineItemState',
-        lineItemId: 'nalepa monday',
-        quantity: 3,
-        fromState: {
-          typeId: 'state',
-          id: 'wat',
-        },
-        toState: {
-          typeId: 'state',
-          id: 'patattekes',
-        },
-      },
-    ],
-    'generated actions match expected data',
-  )
+  t.deepEqual(actions, [], 'no actions are generated')
 
   t.end()
 })
 
 test(`buildUpdateActions
-  should ignore lineItems without a state`, (t) => {
-  const order = Object.assign(
-    JSON.parse(JSON.stringify(orderSample)),
-    {
-      lineItems: [{
-        id: '123',
-      }],
-    },
-  )
+  should call build action functions with the field name`, (t) => {
+  const buildOrderActionsStub =
+    sinon.stub(buildOrderActions, 'lineItems', () => [])
 
-  const actions = newOrdersUpdate().buildUpdateActions(order)
+  newOrdersUpdate().buildUpdateActions({ lineItems: [] })
 
-  t.deepEqual(actions, [], 'no actions are generated')
+  t.equal(buildOrderActionsStub.callCount, 1)
 
   t.end()
 })

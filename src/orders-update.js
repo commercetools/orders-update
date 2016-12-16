@@ -3,6 +3,7 @@ import Promise from 'bluebird'
 import { SphereClient } from 'sphere-node-sdk'
 
 import orderSchema from './order-schema'
+import buildOrderActions from './build-order-actions'
 
 export default class OrdersUpdate {
 
@@ -94,27 +95,10 @@ export default class OrdersUpdate {
   buildUpdateActions (order) {
     const actions = []
 
-    if (order.lineItems)
-      order.lineItems.forEach((lineItem) => {
-        if (lineItem.state)
-          lineItem.state.forEach((state) => {
-            if (state.fromState && state.toState) {
-              const action = {
-                action: 'transitionLineItemState',
-                lineItemId: lineItem.id,
-                quantity: state.quantity,
-                fromState: state.fromState,
-                toState: state.toState,
-              }
-
-              // Check for optional fields
-              if (state.actualTransitionDate)
-                action.actualTransitionDate = state.actualTransitionDate
-
-              actions.push(action)
-            }
-          })
-      })
+    Object.keys(order).forEach((field) => {
+      if (typeof buildOrderActions[field] === 'function')
+        actions.push(...buildOrderActions[field](order))
+    })
 
     this.logger.verbose(`Build update actions: ${actions}`)
     return actions

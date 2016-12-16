@@ -8,6 +8,10 @@
 
 A library that helps with updating [orders](https://dev.commercetools.com/http-api-projects-orders.html) into the [commercetools] platform.
 
+## Supported order fields
+- lineItems
+- customLineItems
+
 ## Usage
 
 ### CLI
