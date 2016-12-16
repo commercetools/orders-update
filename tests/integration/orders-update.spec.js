@@ -60,14 +60,9 @@ test('the module should modify an existing order', (t) => {
       modifiedOrder.lineItems[0].state = [
         {
           quantity: 1,
-          fromState: {
-            typeId: 'state',
-            id: orderResult.body.lineItems[0].state[0].state.id,
-          },
-          toState: {
-            typeId: 'state',
-            id: orderResult.body.lineItems[0].state[1].state.id,
-          },
+          // TODO: use results instead of hardcoding
+          fromState: 'Wubalubadubdub',
+          toState: 'Meeseeks',
           actualTransitionDate: '2016-12-23T18:00:00.000Z',
         },
       ]
@@ -75,9 +70,8 @@ test('the module should modify an existing order', (t) => {
       return ordersUpdate.processOrder(modifiedOrder)
     })
     .then(order => ordersUpdate.client.orders
-      .where(`orderNumber="${order.orderNumber}"`)
-      .fetch(),
-    )
+        .where(`orderNumber="${order.orderNumber}"`)
+        .fetch())
     // Check if data is modified as expected
     .then(({ body: { results: orders } }) => {
       const order = orders[0]

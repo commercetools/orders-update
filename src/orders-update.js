@@ -1,5 +1,5 @@
 import Ajv from 'ajv'
-import Promise from 'bluebird'
+import bluebird from 'bluebird'
 import { SphereClient } from 'sphere-node-sdk'
 
 import orderSchema from './order-schema'
@@ -47,6 +47,7 @@ export default class OrdersUpdate {
   // processOrder :: Object -> () -> Object
   processOrder (order) {
     return this.validateOrderData(order)
+      .then(this.getReferences.bind(this))
       .then(this.updateOrder.bind(this))
       .then((result) => {
         this.summary.inserted.push(order.orderNumber)
@@ -57,6 +58,29 @@ export default class OrdersUpdate {
       .catch((error) => {
         this.summary.errors.push({ order, error })
       })
+  }
+
+  getReferences (order) {
+    const getStateReference = key => bluebird.props({
+      typeId: 'state',
+      id: this.client.states
+          .where(`key="${key}"`)
+          .fetch()
+          .then(response => response.body.results[0].id),
+    })
+
+    return bluebird.props(Object.assign(order, {
+      lineItems: bluebird.map(order.lineItems, lineItem =>
+        bluebird.props(Object.assign(lineItem, {
+          state: bluebird.map(lineItem.state, state =>
+            bluebird.props(Object.assign(state, {
+              fromState: getStateReference(state.fromState),
+              toState: getStateReference(state.toState),
+            }))
+          ),
+        }))
+      ),
+    }))
   }
 
   // Update order calling the API
@@ -100,7 +124,7 @@ export default class OrdersUpdate {
         actions.push(...buildOrderActions[field](order))
     })
 
-    this.logger.verbose(`Build update actions: ${actions}`)
+    // this.logger.verbose(`Build update actions: ${actions}`)
     return actions
   }
 
@@ -109,7 +133,7 @@ export default class OrdersUpdate {
   processStream (orders, next) {
     this.logger.info('Starting order processing')
     // process batch
-    return Promise.map(
+    return bluebird.map(
       orders, order => this.processOrder(order),
     ).then(() => {
       // call next for next batch

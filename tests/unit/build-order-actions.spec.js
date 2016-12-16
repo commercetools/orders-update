@@ -176,3 +176,118 @@ test(`lineItems
 
   t.end()
 })
+
+test.skip('refactor!', (t) => {
+  const order = {
+    orderNumber: 'peanutbutter jelly',
+    orderState: 'Open',
+    totalPrice: {
+      currencyCode: 'EUR',
+      centAmount: 4200,
+    },
+    lineItems: [
+      {
+        name: {
+          nl: 'piet',
+        },
+        variant: {
+          sku: 'hobbes',
+        },
+        price: {
+          value: {
+            currencyCode: 'EUR',
+            centAmount: 123,
+          },
+        },
+        quantity: 9001,
+        state: [
+          {
+            quantity: 9000,
+            state: {
+              typeId: 'state',
+              id: '38b51321-3fdb-4e22-97cd-11df27bade8a',
+            },
+          },
+          {
+            quantity: 1,
+            state: {
+              typeId: 'state',
+              id: '6e8bbf96-c1ef-49cf-af73-d04a5e496bbc',
+            },
+          },
+        ],
+        taxRate: {
+          name: 'joe',
+          amount: 99,
+          includedInPrice: true,
+          country: 'NL',
+        },
+      },
+      {
+        name: {
+          nl: 'piet',
+        },
+        variant: {
+          sku: 'hobbes',
+        },
+        price: {
+          value: {
+            currencyCode: 'EUR',
+            centAmount: 123,
+          },
+        },
+        quantity: 9001,
+        state: [
+          {
+            quantity: 9000,
+            fromState: {
+              typeId: 'state',
+              id: '38b51321-3fdb-4e22-97cd-11df27bade8a',
+            },
+            toState: {
+              typeId: 'state',
+              id: '38b51321-3fdb-4e22-97cd-11df27bade8a',
+            },
+          },
+          {
+            quantity: 1,
+            state: {
+              typeId: 'state',
+              id: '6e8bbf96-c1ef-49cf-af73-d04a5e496bbc',
+            },
+          },
+        ],
+        taxRate: {
+          name: 'joe',
+          amount: 99,
+          includedInPrice: true,
+          country: 'NL',
+        },
+      },
+      {
+        name: {
+          nl: 'piet',
+        },
+        variant: {
+          sku: 'hobbes',
+        },
+        price: {
+          value: {
+            currencyCode: 'EUR',
+            centAmount: 123,
+          },
+        },
+        quantity: 9001,
+      },
+    ],
+    returnInfo: [],
+  }
+
+  order.lineItems.reduce((prevLineItem, lineItem) => {
+    console.log('prevLineItem', prevLineItem)
+  }, [])
+
+  t.true(true)
+
+  t.end()
+})
