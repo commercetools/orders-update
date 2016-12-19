@@ -149,7 +149,7 @@ test(`processOrder
   const updater = newOrdersUpdate()
 
   // Stub to 'skip' getReferences
-  sinon.stub(updater, 'getReferences', (order) => order)
+  sinon.stub(updater, 'getReferences', order => order)
 
   const validateStub = sinon.stub(updater, 'validateOrderData')
   validateStub.returns(Promise.reject('validate kaboom'))

@@ -60,9 +60,8 @@ test('the module should modify an existing order', (t) => {
       modifiedOrder.lineItems[0].state = [
         {
           quantity: 1,
-          // TODO: use results instead of hardcoding
-          fromState: 'Wubalubadubdub',
-          toState: 'Meeseeks',
+          fromState: stateSamples[0].key,
+          toState: stateSamples[1].key,
           actualTransitionDate: '2016-12-23T18:00:00.000Z',
         },
       ]

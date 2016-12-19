@@ -76,9 +76,9 @@ export default class OrdersUpdate {
             bluebird.props(Object.assign({}, state, {
               fromState: getStateReference(state.fromState),
               toState: getStateReference(state.toState),
-            }))
+            })),
           ),
-        }))
+        })),
       ),
     }))
   }
@@ -113,9 +113,9 @@ export default class OrdersUpdate {
       })
   }
 
-  // eslint-disable-next-line class-methods-use-this
   // Create API action objects based on the order data
   // buildUpdateActions :: Object -> [Object]
+  // eslint-disable-next-line class-methods-use-this
   buildUpdateActions (order) {
     const actions = []
 
