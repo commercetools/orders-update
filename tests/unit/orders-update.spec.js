@@ -104,20 +104,25 @@ test(`processOrder
   should update an existing order`, (t) => {
   const updater = newOrdersUpdate()
   const mockData = { id: '53 65 6c 77 79 6e' }
+  const mockResult = Promise.resolve({
+    body: {
+      total: 1,
+      results: [mockData],
+    },
+  })
 
+  // Stub calls to the API
   sinon.stub(updater.client.orders, 'where', () => ({
-    fetch: () => Promise.resolve({
-      body: {
-        total: 1,
-        results: [mockData],
-      },
-    }),
+    fetch: () => mockResult,
+  }))
+  sinon.stub(updater.client.states, 'where', () => ({
+    fetch: () => mockResult,
   }))
 
   sinon.stub(updater, 'buildUpdateActions', () => [true])
 
   const byIdStub = sinon.stub(updater.client.orders, 'byId', () => ({
-    update: () => Promise.resolve(),
+    update: () => mockResult,
   }))
 
   updater.processOrder(orderSample).then(() => {
@@ -125,7 +130,10 @@ test(`processOrder
       updater.summary.successfullImports, 1,
       'one order should be imported successfully',
     )
-
+    t.deepEqual(
+      updater.summary.errors, [],
+      'no errors are reported',
+    )
     t.equal(
       byIdStub.args[0][0], mockData.id,
       'should call API with order ID to update',
@@ -139,6 +147,9 @@ test(`processOrder
 test(`processOrder
   should push error to summary when error occurs`, (t) => {
   const updater = newOrdersUpdate()
+
+  // Stub to 'skip' getReferences
+  sinon.stub(updater, 'getReferences', (order) => order)
 
   const validateStub = sinon.stub(updater, 'validateOrderData')
   validateStub.returns(Promise.reject('validate kaboom'))

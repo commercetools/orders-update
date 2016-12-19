@@ -69,11 +69,11 @@ export default class OrdersUpdate {
           .then(response => response.body.results[0].id),
     })
 
-    return bluebird.props(Object.assign(order, {
+    return bluebird.props(Object.assign({}, order, {
       lineItems: bluebird.map(order.lineItems, lineItem =>
-        bluebird.props(Object.assign(lineItem, {
+        bluebird.props(Object.assign({}, lineItem, {
           state: bluebird.map(lineItem.state, state =>
-            bluebird.props(Object.assign(state, {
+            bluebird.props(Object.assign({}, state, {
               fromState: getStateReference(state.fromState),
               toState: getStateReference(state.toState),
             }))

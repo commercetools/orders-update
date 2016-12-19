@@ -56,7 +56,7 @@ test('the module should modify an existing order', (t) => {
     })
     // Modify data and send to module
     .then((orderResult) => {
-      const modifiedOrder = JSON.parse(JSON.stringify(orderResult.body))
+      const modifiedOrder = Object.assign({}, orderResult.body)
       modifiedOrder.lineItems[0].state = [
         {
           quantity: 1,
