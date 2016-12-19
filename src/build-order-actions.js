@@ -1,10 +1,8 @@
 export default {
-  lineItems: (order) => {
-    const actions = []
-
-    order.lineItems.forEach((lineItem) => {
-      if (lineItem.state)
-        lineItem.state.forEach((state) => {
+  lineItems: order => order.lineItems.reduce((actions, lineItem) => {
+    if (lineItem.state)
+      actions.push(
+        ...lineItem.state.reduce((stateActions, state) => {
           if (state.fromState && state.toState) {
             const action = {
               action: 'transitionLineItemState',
@@ -14,42 +12,43 @@ export default {
               toState: state.toState,
             }
 
-            // Check for optional fields
+              // Check for optional fields
             if (state.actualTransitionDate)
               action.actualTransitionDate = state.actualTransitionDate
 
-            actions.push(action)
+            stateActions.push(action)
           }
-        })
-    })
+          return stateActions
+        }, []),
+      )
 
     return actions
-  },
+  }, []),
 
-  customLineItems: (order) => {
-    const actions = []
-
-    order.customLineItems.forEach((lineItem) => {
+  customLineItems: order =>
+    order.customLineItems.reduce((actions, lineItem) => {
       if (lineItem.state)
-        lineItem.state.forEach((state) => {
-          if (state.fromState && state.toState) {
-            const action = {
-              action: 'transitionCustomLineItemState',
-              customLineItemId: lineItem.id,
-              quantity: state.quantity,
-              fromState: state.fromState,
-              toState: state.toState,
+        actions.push(
+          ...lineItem.state.reduce((stateActions, state) => {
+            if (state.fromState && state.toState) {
+              const action = {
+                action: 'transitionCustomLineItemState',
+                customLineItemId: lineItem.id,
+                quantity: state.quantity,
+                fromState: state.fromState,
+                toState: state.toState,
+              }
+
+                // Check for optional fields
+              if (state.actualTransitionDate)
+                action.actualTransitionDate = state.actualTransitionDate
+
+              stateActions.push(action)
             }
+            return stateActions
+          }, []),
+        )
 
-            // Check for optional fields
-            if (state.actualTransitionDate)
-              action.actualTransitionDate = state.actualTransitionDate
-
-            actions.push(action)
-          }
-        })
-    })
-
-    return actions
-  },
+      return actions
+    }, []),
 }
