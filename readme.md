@@ -44,22 +44,27 @@ const fs = require('fs');
 const OrdersUpdate = require('orders-update');
 
 const ordersUpdate = new OrdersUpdate({
+  config: {
     project_key: '',
     client_id: '',
     client_secret: '',
+  },
 });
 
-ordersUpdate.processOrder(fs.readFileSync('./input.json'))
+const orderData = JSON.parse(fs.readFileSync('order.json'));
+
+ordersUpdate.processOrder(orderData)
   .then(() => {
-    // look at the summary to see errors
-    console.log(ordersUpdate.summary);
+    // look at the summary
+    console.info(ordersUpdate.summary);
 
     // {
     //   errors: [...],
     //   inserted: [...],
     //   successfulImports: 1
     // }
-  });
+  })
+  .catch(console.error);
 ```
 
 ## Configuration
