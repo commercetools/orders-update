@@ -1,5 +1,5 @@
 {
-  "name": "orders-update",
+  "name": "@commercetools/orders-update",
   "version": "1.0.0",
   "description": "Library that helps with updating orders into the commercetools platform.",
   "keywords": [
@@ -7,6 +7,10 @@
     "orders",
     "update"
   ],
+  "author": {
+    "name": "Selwyn",
+    "email": "selwyn.versteeg@commercetools.com"
+  },
   "homepage": "https://github.com/commercetools/orders-update#readme",
   "repository": {
     "type": "git",
@@ -14,7 +18,7 @@
   },
   "bugs": "https://github.com/commercetools/orders-update/issues",
   "license": "MIT",
-  "main": "dist/index.js",
+  "main": "dist/orders-update.js",
   "files": [
     "dist"
   ],
@@ -24,14 +28,19 @@
     "test:watch": "chokidar src tests -c 'npm test'",
     "build": "npm run clean && babel src -d dist",
     "clean": "rimraf dist/*",
-    "commit": "git-cz",
     "codecov": "cat ./coverage/lcov.info | codecov",
     "coverage": "npm run lint && npm run clean && cross-env NODE_ENV=test nyc --reporter=lcov --reporter=text npm test",
     "coverage:html": "npm run lint && cross-env NODE_ENV=test nyc --reporter=html npm test",
-    "lint": "./scripts/lint src tests"
+    "lint": "./scripts/lint src tests",
+    "commit": "git-cz",
+    "prepublish": "npm run build"
   },
   "dependencies": {
+    "ajv": "^4.9.0",
+    "bluebird": "^3.4.6",
+    "sinon": "^1.17.6",
     "sphere-node-sdk": "^1.16.2",
+    "sphere-node-utils": "^0.9.1",
     "underscore": "^1.8.3",
     "underscore-mixins": "^0.1.4"
   },
@@ -45,13 +54,13 @@
     "commitizen": "^2.8.6",
     "cross-env": "^3.1.3",
     "cz-conventional-changelog": "^1.2.0",
-    "eslint": "^3.6.0",
-    "eslint-config-airbnb": "^12.0.0",
-    "eslint-config-commercetools": "^4.0.0",
-    "eslint-plugin-jsx-a11y": "^2.2.2",
-    "eslint-plugin-react": "^6.3.0",
+    "eslint": "^3.12.2",
+    "eslint-config-airbnb": "^13.0.0",
+    "eslint-config-commercetools": "^5.0.0",
     "eslint-formatter-pretty": "^1.0.0",
-    "eslint-plugin-import": "^1.16.0",
+    "eslint-plugin-import": "^2.2.0",
+    "eslint-plugin-jsx-a11y": "^3.0.2",
+    "eslint-plugin-react": "^6.8.0",
     "ghooks": "^1.3.2",
     "nyc": "^10.0.0",
     "rimraf": "^2.5.4",
@@ -66,6 +75,18 @@
     "ghooks": {
       "commit-msg": "validate-commit-msg",
       "pre-commit": "./scripts/lint-staged-files"
+    }
+  },
+  "babel": {
+    "presets": [
+      "es2015"
+    ],
+    "env": {
+      "test": {
+        "plugins": [
+          "istanbul"
+        ]
+      }
     }
   },
   "eslintConfig": {

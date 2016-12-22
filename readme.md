@@ -6,19 +6,76 @@
 [![David Dependencies Status][david-icon]][david]
 [![David devDependencies Status][david-dev-icon]][david-dev]
 
-A short description of what this project is about and it's core features. This might be followed by some points to clarify:
-- Do something with this
-- Supports other stuff
+A library that helps with updating [orders](https://dev.commercetools.com/http-api-projects-orders.html) into the [commercetools] platform.
+
+## Supported order fields
+- lineItems
+- customLineItems
 
 ## Usage
-How to use this project, possibly with a small code example. Could be split into CLI and direct usage.
+
 ### CLI
-...
-### JS
-...
+
+You can use the orders update from the command line using [`sphere-node-cli`](https://github.com/sphereio/sphere-node-cli).
+In order for the CLI to update orders, the file to update from must be JSON and follow the this structure:
+```
+{
+  "orders": [
+    <order>,
+    <order>,
+    ...
+  ]
+}
+```
+Then you can use this file using the cli:
+```
+sphere-node-cli -t order -p my-project-key -f ./orders.json
+```
+
+### Direct usage
+
+If you want more control, you can also use this library directly in JavaScript. To do this you first need to install it:
+```
+npm install @commercetools/orders-update --save
+```
+Then you can use it to update an order like so:
+```
+const fs = require('fs');
+const OrdersUpdate = require('orders-update');
+
+const ordersUpdate = new OrdersUpdate({
+  config: {
+    project_key: '',
+    client_id: '',
+    client_secret: '',
+  },
+});
+
+const orderData = JSON.parse(fs.readFileSync('order.json'));
+
+ordersUpdate.processOrder(orderData)
+  .then(() => {
+    // look at the summary
+    console.info(ordersUpdate.summary);
+
+    // {
+    //   errors: [...],
+    //   inserted: [...],
+    //   successfulImports: 1
+    // }
+  })
+  .catch(console.error);
+```
 
 ## Configuration
-Options to choose from if there are any should be listed inside this file.
+`OrdersUpdate` accepts one object as an argument:
+- API client config (_required_)
+  - See the [SDK documentation](http://sphereio.github.io/sphere-node-sdk/classes/SphereClient.html) for more information.
+- Logger takes object with four functions (_optional_)
+  - error
+  - warn
+  - info
+  - verbose
 
 ## Contributing
 See [contributing.md](contributing.md) for info on contributing.
