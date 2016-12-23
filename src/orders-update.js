@@ -63,9 +63,8 @@ export default class OrdersUpdate {
           this.summary.errors.push({ order, error })
       })
   }
-
-  getReferences (order) {
-    const getStateReference = key => bluebird.props({
+  _getStateReference (key) {
+    return bluebird.props({
       typeId: 'state',
       id: this.client.states
           .where(`key="${key}"`)
@@ -78,14 +77,15 @@ export default class OrdersUpdate {
             return res.body.results[0].id
           }),
     })
-
+  }
+  getReferences (order) {
     return bluebird.props(Object.assign({}, order, {
       lineItems: bluebird.map(order.lineItems, lineItem =>
         bluebird.props(Object.assign({}, lineItem, {
           state: bluebird.map(lineItem.state, state =>
             bluebird.props(Object.assign({}, state, {
-              fromState: getStateReference(state.fromState),
-              toState: getStateReference(state.toState),
+              fromState: this._getStateReference(state.fromState),
+              toState: this._getStateReference(state.toState),
             })),
           ),
         })),

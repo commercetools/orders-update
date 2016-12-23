@@ -243,3 +243,62 @@ test(`buildUpdateActions
 
   t.end()
 })
+
+test(`OrdersUpdate::_getStateReferences
+  should fetch state and return reference type and state id`, (t) => {
+  const updater = newOrdersUpdate()
+  const mockData = { id: '53 65 6c 77 79 6e' }
+  const mockResult = Promise.resolve({
+    body: {
+      total: 1,
+      results: [mockData],
+    },
+  })
+
+  sinon.stub(updater.client.states, 'where', () => ({
+    fetch: () => mockResult,
+  }))
+  updater._getStateReference('testState').then((result) => {
+    t.ok(result)
+    t.equal(
+      result.typeId,
+      'state',
+      'reference type \'state\' is added to result',
+    )
+    t.ok(result.id, 'State Id is added to result')
+    t.end()
+  })
+})
+
+test(`OrdersUpdate::_getStateReferences
+  should return if no result is returned`, (t) => {
+  const updater = newOrdersUpdate()
+  const mockResult = Promise.resolve({
+    body: {
+      total: 0,
+      count: 0,
+      results: [],
+    },
+  })
+
+  sinon.stub(updater.client.states, 'where', () => ({
+    fetch: () => mockResult,
+  }))
+  updater._getStateReference('testState').then((result) => {
+    t.ok(result)
+    t.equal(
+      result.typeId,
+      'state',
+      'reference type \'state\' is added to result',
+    )
+    t.ok(result.id, 'State Id is added to result')
+    t.end()
+  }).catch((error) => {
+    t.ok(error)
+    t.equal(
+      error.message,
+      'Didn\'t find any match while resolving testState from the API',
+      'Error message is descriptive')
+    t.end()
+  })
+})
