@@ -56,7 +56,11 @@ export default class OrdersUpdate {
         return result.body
       })
       .catch((error) => {
-        this.summary.errors.push({ order, error })
+        if (error instanceof Error)
+          // TO DO: Find a way to return error stack, we losing too much info
+          this.summary.errors.push({ order, error: error.message })
+        else
+          this.summary.errors.push({ order, error })
       })
   }
 
@@ -66,7 +70,13 @@ export default class OrdersUpdate {
       id: this.client.states
           .where(`key="${key}"`)
           .fetch()
-          .then(response => response.body.results[0].id),
+          .then((res) => {
+            if (res.body.count === 0)
+              return bluebird.reject(new Error(
+                `Didn't find any match while resolving ${key} from the API`,
+              ))
+            return res.body.results[0].id
+          }),
     })
 
     return bluebird.props(Object.assign({}, order, {

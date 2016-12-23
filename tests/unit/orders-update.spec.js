@@ -152,7 +152,7 @@ test(`processOrder
   sinon.stub(updater, 'getReferences', order => order)
 
   const validateStub = sinon.stub(updater, 'validateOrderData')
-  validateStub.returns(Promise.reject('validate kaboom'))
+  validateStub.returns(Promise.reject(new Error('validate kaboom')))
   validateStub.onCall(1).returns(Promise.resolve())
 
   updater.processOrder(orderSample)
