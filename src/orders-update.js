@@ -140,7 +140,7 @@ export default class OrdersUpdate {
         actions.push(...buildOrderActions[field](order))
     })
 
-    // this.logger.verbose(`Build update actions: ${actions}`)
+    this.logger.verbose(`Build update actions: ${actions}`)
     return actions
   }
 
