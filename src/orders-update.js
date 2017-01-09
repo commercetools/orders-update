@@ -1,5 +1,6 @@
 import Ajv from 'ajv'
 import bluebird from 'bluebird'
+import serializeError from 'serialize-error'
 import { SphereClient } from 'sphere-node-sdk'
 
 import orderSchema from './order-schema'
@@ -56,14 +57,16 @@ export default class OrdersUpdate {
         return result.body
       })
       .catch((error) => {
-        if (error instanceof Error)
-          // TO DO: Find a way to return error stack, we losing too much info
-          this.summary.errors.push({ order, error: error.message })
-        else
-          this.summary.errors.push({ order, error })
+        this.summary.errors.push({
+          order,
+          error: serializeError(error),
+        })
       })
   }
-  _getStateReference (key) {
+
+  // Get the state ID from the API based on the key
+  // getStateReference :: String -> Promise -> String
+  getStateReference (key) {
     return bluebird.props({
       typeId: 'state',
       id: this.client.states
@@ -78,14 +81,17 @@ export default class OrdersUpdate {
           }),
     })
   }
+
+  // Fills in the state key values of the passed order
+  // getReferences :: Object -> Promise -> Object
   getReferences (order) {
     return bluebird.props(Object.assign({}, order, {
       lineItems: bluebird.map(order.lineItems, lineItem =>
         bluebird.props(Object.assign({}, lineItem, {
           state: bluebird.map(lineItem.state, state =>
             bluebird.props(Object.assign({}, state, {
-              fromState: this._getStateReference(state.fromState),
-              toState: this._getStateReference(state.toState),
+              fromState: this.getStateReference(state.fromState),
+              toState: this.getStateReference(state.toState),
             })),
           ),
         })),

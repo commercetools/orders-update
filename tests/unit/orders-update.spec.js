@@ -158,17 +158,25 @@ test(`processOrder
   updater.processOrder(orderSample)
     .catch(t.fail)
 
-  sinon.stub(updater, 'updateOrder', () => Promise.reject('update kaboom'))
+  sinon.stub(updater, 'updateOrder', () =>
+    Promise.reject(new Error('update kaboom')))
 
   updater.processOrder(orderSample)
     .then(() => {
       t.equal(
-        updater.summary.errors[0].error, 'validate kaboom',
+        updater.summary.errors[0].error.message,
+        'validate kaboom',
         'updater summary contains validate error',
       )
       t.equal(
-        updater.summary.errors[1].error, 'update kaboom',
+        updater.summary.errors[1].error.message,
+        'update kaboom',
         'updater summary contains update error',
+      )
+      t.equal(
+        JSON.stringify(updater.summary.errors[0].error.message),
+        '"validate kaboom"',
+        'error is serialized to work with JSON.stringify',
       )
       t.end()
     })
@@ -244,7 +252,7 @@ test(`buildUpdateActions
   t.end()
 })
 
-test(`OrdersUpdate::_getStateReferences
+test(`getStateReferences
   should fetch state and return reference type and state id`, (t) => {
   const updater = newOrdersUpdate()
   const mockData = { id: '53 65 6c 77 79 6e' }
@@ -258,7 +266,8 @@ test(`OrdersUpdate::_getStateReferences
   sinon.stub(updater.client.states, 'where', () => ({
     fetch: () => mockResult,
   }))
-  updater._getStateReference('testState').then((result) => {
+
+  updater.getStateReference('testState').then((result) => {
     t.ok(result)
     t.equal(
       result.typeId,
@@ -270,7 +279,7 @@ test(`OrdersUpdate::_getStateReferences
   })
 })
 
-test(`OrdersUpdate::_getStateReferences
+test(`getStateReferences
   should return if no result is returned`, (t) => {
   const updater = newOrdersUpdate()
   const mockResult = Promise.resolve({
@@ -284,7 +293,7 @@ test(`OrdersUpdate::_getStateReferences
   sinon.stub(updater.client.states, 'where', () => ({
     fetch: () => mockResult,
   }))
-  updater._getStateReference('testState').then((result) => {
+  updater.getStateReference('testState').then((result) => {
     t.ok(result)
     t.equal(
       result.typeId,
@@ -298,7 +307,8 @@ test(`OrdersUpdate::_getStateReferences
     t.equal(
       error.message,
       'Didn\'t find any match while resolving testState from the API',
-      'Error message is descriptive')
+      'Error message is descriptive',
+    )
     t.end()
   })
 })
