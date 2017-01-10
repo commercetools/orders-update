@@ -268,7 +268,6 @@ test(`getStateReferences
   }))
 
   updater.getStateReference('testState').then((result) => {
-    t.ok(result)
     t.equal(
       result.typeId,
       'state',
@@ -293,22 +292,15 @@ test(`getStateReferences
   sinon.stub(updater.client.states, 'where', () => ({
     fetch: () => mockResult,
   }))
-  updater.getStateReference('testState').then((result) => {
-    t.ok(result)
-    t.equal(
-      result.typeId,
-      'state',
-      'reference type \'state\' is added to result',
-    )
-    t.ok(result.id, 'State Id is added to result')
-    t.end()
-  }).catch((error) => {
-    t.ok(error)
-    t.equal(
-      error.message,
-      'Didn\'t find any match while resolving testState from the API',
-      'Error message is descriptive',
-    )
-    t.end()
-  })
+
+  updater.getStateReference('testState')
+    .then(t.fail)
+    .catch((error) => {
+      t.equal(
+        error.message,
+        'Didn\'t find any match while resolving testState from the API',
+        'Error message is descriptive',
+      )
+      t.end()
+    })
 })
