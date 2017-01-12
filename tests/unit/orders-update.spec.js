@@ -152,23 +152,31 @@ test(`processOrder
   sinon.stub(updater, 'getReferences', order => order)
 
   const validateStub = sinon.stub(updater, 'validateOrderData')
-  validateStub.returns(Promise.reject('validate kaboom'))
+  validateStub.returns(Promise.reject(new Error('validate kaboom')))
   validateStub.onCall(1).returns(Promise.resolve())
 
   updater.processOrder(orderSample)
     .catch(t.fail)
 
-  sinon.stub(updater, 'updateOrder', () => Promise.reject('update kaboom'))
+  sinon.stub(updater, 'updateOrder', () =>
+    Promise.reject(new Error('update kaboom')))
 
   updater.processOrder(orderSample)
     .then(() => {
       t.equal(
-        updater.summary.errors[0].error, 'validate kaboom',
+        updater.summary.errors[0].error.message,
+        'validate kaboom',
         'updater summary contains validate error',
       )
       t.equal(
-        updater.summary.errors[1].error, 'update kaboom',
+        updater.summary.errors[1].error.message,
+        'update kaboom',
         'updater summary contains update error',
+      )
+      t.equal(
+        JSON.stringify(updater.summary.errors[0].error.message),
+        '"validate kaboom"',
+        'error is serialized to work with JSON.stringify',
       )
       t.end()
     })
@@ -242,4 +250,57 @@ test(`buildUpdateActions
   t.equal(buildOrderActionsStub.callCount, 1)
 
   t.end()
+})
+
+test(`getStateReferences
+  should fetch state and return reference type and state id`, (t) => {
+  const updater = newOrdersUpdate()
+  const mockData = { id: '53 65 6c 77 79 6e' }
+  const mockResult = Promise.resolve({
+    body: {
+      total: 1,
+      results: [mockData],
+    },
+  })
+
+  sinon.stub(updater.client.states, 'where', () => ({
+    fetch: () => mockResult,
+  }))
+
+  updater.getStateReference('testState').then((result) => {
+    t.equal(
+      result.typeId,
+      'state',
+      'reference type \'state\' is added to result',
+    )
+    t.ok(result.id, 'State Id is added to result')
+    t.end()
+  })
+})
+
+test(`getStateReferences
+  should return if no result is returned`, (t) => {
+  const updater = newOrdersUpdate()
+  const mockResult = Promise.resolve({
+    body: {
+      total: 0,
+      count: 0,
+      results: [],
+    },
+  })
+
+  sinon.stub(updater.client.states, 'where', () => ({
+    fetch: () => mockResult,
+  }))
+
+  updater.getStateReference('testState')
+    .then(t.fail)
+    .catch((error) => {
+      t.equal(
+        error.message,
+        'Didn\'t find any match while resolving testState from the API',
+        'Error message is descriptive',
+      )
+      t.end()
+    })
 })

@@ -1,5 +1,6 @@
 import Ajv from 'ajv'
 import bluebird from 'bluebird'
+import serializeError from 'serialize-error'
 import { SphereClient } from 'sphere-node-sdk'
 
 import orderSchema from './order-schema'
@@ -56,26 +57,41 @@ export default class OrdersUpdate {
         return result.body
       })
       .catch((error) => {
-        this.summary.errors.push({ order, error })
+        this.summary.errors.push({
+          order,
+          error: serializeError(error),
+        })
       })
   }
 
-  getReferences (order) {
-    const getStateReference = key => bluebird.props({
+  // Get the state ID from the API based on the key
+  // getStateReference :: String -> Promise -> String
+  getStateReference (key) {
+    return bluebird.props({
       typeId: 'state',
       id: this.client.states
           .where(`key="${key}"`)
           .fetch()
-          .then(response => response.body.results[0].id),
+          .then((res) => {
+            if (res.body.count === 0)
+              return bluebird.reject(new Error(
+                `Didn't find any match while resolving ${key} from the API`,
+              ))
+            return res.body.results[0].id
+          }),
     })
+  }
 
+  // Fills in the state key values of the passed order
+  // getReferences :: Object -> Promise -> Object
+  getReferences (order) {
     return bluebird.props(Object.assign({}, order, {
       lineItems: bluebird.map(order.lineItems, lineItem =>
         bluebird.props(Object.assign({}, lineItem, {
           state: bluebird.map(lineItem.state, state =>
             bluebird.props(Object.assign({}, state, {
-              fromState: getStateReference(state.fromState),
-              toState: getStateReference(state.toState),
+              fromState: this.getStateReference(state.fromState),
+              toState: this.getStateReference(state.toState),
             })),
           ),
         })),
@@ -124,7 +140,7 @@ export default class OrdersUpdate {
         actions.push(...buildOrderActions[field](order))
     })
 
-    // this.logger.verbose(`Build update actions: ${actions}`)
+    this.logger.verbose(`Build update actions: ${actions}`)
     return actions
   }
 
