@@ -3,6 +3,76 @@ import test from 'tape'
 
 import orderSample from '../helpers/order-sample.json'
 
+test(`syncInfo
+  should build actions`, (t) => {
+  const order = Object.assign(
+    {},
+    orderSample,
+    {
+      syncInfo: [
+        {
+          channel: {
+            typeId: 'channel',
+            id: 'd1229e6f-2b79-441e-b419-180311e52123',
+          },
+          syncedAt: '2001-09-11T14:00:00.000Z',
+        },
+        {
+          channel: {
+            typeId: 'channel',
+            id: 'd1229e6f-2b79-441e-b419-180311e52754',
+          },
+          externalId: 'dhl',
+        },
+        {
+          channel: {
+            typeId: 'channel',
+            id: 'd1229e6f-2b79-441e-b419-180311e52754',
+          },
+          externalId: 'ctp',
+          syncedAt: '2001-09-11T14:00:00.000Z',
+        },
+      ],
+    },
+  )
+
+  const actions = buildOrderActions.syncInfo(order)
+
+  t.deepEqual(
+    actions,
+    [
+      {
+        action: 'updateSyncInfo',
+        channel: {
+          typeId: 'channel',
+          id: 'd1229e6f-2b79-441e-b419-180311e52123',
+        },
+        syncedAt: '2001-09-11T14:00:00.000Z',
+      },
+      {
+        action: 'updateSyncInfo',
+        channel: {
+          typeId: 'channel',
+          id: 'd1229e6f-2b79-441e-b419-180311e52754',
+        },
+        externalId: 'dhl',
+      },
+      {
+        action: 'updateSyncInfo',
+        channel: {
+          typeId: 'channel',
+          id: 'd1229e6f-2b79-441e-b419-180311e52754',
+        },
+        externalId: 'ctp',
+        syncedAt: '2001-09-11T14:00:00.000Z',
+      },
+    ],
+    'generated actions match expected data',
+  )
+
+  t.end()
+})
+
 test(`lineItems
   should build actions`, (t) => {
   const order = Object.assign(

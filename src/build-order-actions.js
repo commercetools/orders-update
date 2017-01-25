@@ -25,6 +25,16 @@ export default {
     return actions
   }, []),
 
+  syncInfo: order => order.syncInfo.reduce((actions, syncInfo) => {
+    const action = Object.assign({
+      action: 'updateSyncInfo',
+    }, syncInfo)
+
+    actions.push(action)
+
+    return actions
+  }, []),
+
   customLineItems: order =>
     order.customLineItems.reduce((actions, lineItem) => {
       if (lineItem.state)
