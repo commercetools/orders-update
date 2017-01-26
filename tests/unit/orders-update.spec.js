@@ -118,6 +118,9 @@ test(`processOrder
   sinon.stub(updater.client.states, 'where', () => ({
     fetch: () => mockResult,
   }))
+  sinon.stub(updater.client.channels, 'where', () => ({
+    fetch: () => mockResult,
+  }))
 
   sinon.stub(updater, 'buildUpdateActions', () => [true])
 
@@ -181,31 +184,6 @@ test(`processOrder
       t.end()
     })
     .catch(t.fail)
-})
-
-test(`updateOrder
-  should ignore an identical existing order`, (t) => {
-  const updater = newOrdersUpdate()
-
-  sinon.stub(updater.client.orders, 'where', () => ({
-    fetch: () => Promise.resolve({
-      body: {
-        total: 1,
-        results: [orderSample],
-      },
-    }),
-  }))
-
-  const byIdStub = sinon.stub(updater.client.orders, 'byId', () => ({
-    update: () => Promise.resolve(),
-  }))
-
-  updater.updateOrder(orderSample).then(() => {
-    t.false(byIdStub.called, 'no call to the API should be made')
-
-    t.end()
-  })
-  .catch(t.fail)
 })
 
 test(`updateOrder
@@ -303,4 +281,165 @@ test(`getStateReferences
       )
       t.end()
     })
+})
+
+test(`getChannelReference
+  should fetch channel and return reference type and state id`, (t) => {
+  const updater = newOrdersUpdate()
+  const mockData = { id: '277a3b20-8b31-4764-98ec-2fc720a98ba2' }
+  const mockResult = Promise.resolve({
+    body: {
+      total: 1,
+      results: [mockData],
+    },
+  })
+
+  sinon.stub(updater.client.channels, 'where', () => ({
+    fetch: () => mockResult,
+  }))
+
+  updater.getChannelReference('testChannel').then((result) => {
+    t.equal(
+      result.typeId,
+      'channel',
+      'reference type \'channel\' is added to result',
+    )
+    t.ok(result.id, 'channel Id is added to result')
+    t.end()
+  })
+})
+
+test(`getChannelReference
+  should ignore if channel field is an object`, (t) => {
+  const updater = newOrdersUpdate()
+
+  const stub = sinon.stub(updater.client.channels, 'where')
+  const mockChannel = {
+    typeId: 'channel',
+    id: '277a3b20-8b31-4764-98ec-2fc720a98ba2',
+  }
+  updater.getChannelReference(mockChannel).then((result) => {
+    t.false(stub.called, 'fetch channels method is not called')
+    t.deepEqual(
+      result,
+      mockChannel,
+      'channel object passed in is returned',
+    )
+    t.end()
+  })
+})
+
+test(`getChannelReference
+  should return if no result is returned`, (t) => {
+  const updater = newOrdersUpdate()
+  const mockResult = Promise.resolve({
+    body: {
+      total: 0,
+      count: 0,
+      results: [],
+    },
+  })
+
+  sinon.stub(updater.client.channels, 'where', () => ({
+    fetch: () => mockResult,
+  }))
+
+  updater.getChannelReference('testChannel')
+    .then(t.fail)
+    .catch((error) => {
+      t.equal(
+        error.message,
+        'Didn\'t find any match while resolving testChannel from the API',
+        'Error message is descriptive',
+      )
+      t.end()
+    })
+})
+
+test(`getReferences
+  should fill in missing required fields with empty array because\
+  it's not possible to map on an 'undefined' field`, (t) => {
+  const updater = newOrdersUpdate()
+  updater.getReferences({}).then((result) => {
+    t.end()
+    t.deepEqual(
+      result,
+      { lineItems: [], syncInfo: [] },
+      'Required arguments are filled in',
+    )
+  })
+})
+
+test(`getReferences
+  should resolve lineItems and syncInfo reference`, (t) => {
+  const mockOrder = {
+    orderNumber: 'peanutbutter jelly',
+    lineItems: [{
+      state: [
+        {
+          quantity: 9000,
+          fromState: 'ordered',
+          toState: 'shipped',
+        },
+        {
+          quantity: 9000,
+          fromState: 'ordered',
+          toState: 'delivered',
+        },
+      ],
+    }],
+    syncInfo: [{
+      channel: 'testChannel',
+    }],
+  }
+
+  const updater = newOrdersUpdate()
+  const mockChannel = {
+    typeId: 'channel',
+    id: '277a3b20-8b31-4764-98ec-2fc720a98ba2',
+  }
+  const channelStub = sinon.stub(
+    updater,
+    'getChannelReference',
+    () => mockChannel,
+  )
+  const mockState = {
+    typeId: 'state',
+    id: '53 65 6c 77 79 6e',
+  }
+  const stateStub = sinon.stub(updater, 'getStateReference')
+  stateStub.returns(mockState)
+
+  updater.getReferences(mockOrder).then((result) => {
+    t.equal(stateStub.callCount, 4, 'getStateReference was called 4 times')
+    t.equal(channelStub.callCount, 1, 'getChannelReference was called 1 times')
+    t.deepEqual(
+      stateStub.args,
+      [ [ 'ordered' ], [ 'shipped' ], [ 'ordered' ], [ 'delivered' ] ],
+      'getStateReference is called with the right arguments in the right order',
+    )
+    t.deepEqual(
+      channelStub.args,
+      [ [ 'testChannel' ] ],
+      'getChannelReference is called with the right argument',
+    )
+    t.deepEqual(
+      result.syncInfo[0].channel,
+      mockChannel,
+      'Channel reference object is returned',
+    )
+    result.lineItems[0].state.forEach((state) => {
+      t.deepEqual(
+        state.fromState,
+        mockState,
+        'fromState reference object is returned',
+      )
+      t.deepEqual(
+        state.toState,
+        mockState,
+        'toState reference object is returned',
+      )
+    })
+    t.end()
+  })
 })

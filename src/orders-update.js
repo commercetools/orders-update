@@ -82,9 +82,30 @@ export default class OrdersUpdate {
     })
   }
 
+  getChannelReference (key) {
+    if (typeof key === 'object')
+      return Promise.resolve(key)
+    return bluebird.props({
+      typeId: 'channel',
+      id: this.client.channels
+          .where(`key="${key}"`)
+          .fetch()
+          .then((res) => {
+            if (res.body.count === 0)
+              return bluebird.reject(new Error(
+                `Didn't find any match while resolving ${key} from the API`,
+              ))
+            return res.body.results[0].id
+          }),
+    })
+  }
   // Fills in the state key values of the passed order
   // getReferences :: Object -> Promise -> Object
   getReferences (order) {
+    if (!order.lineItems)
+      order.lineItems = [] // eslint-disable-line no-param-reassign
+    if (!order.syncInfo)
+      order.syncInfo = [] // eslint-disable-line no-param-reassign
     return bluebird.props(Object.assign({}, order, {
       lineItems: bluebird.map(order.lineItems, lineItem =>
         bluebird.props(Object.assign({}, lineItem, {
@@ -94,6 +115,11 @@ export default class OrdersUpdate {
               toState: this.getStateReference(state.toState),
             })),
           ),
+        })),
+      ),
+      syncInfo: bluebird.map(order.syncInfo, syncInfo =>
+        bluebird.props(Object.assign({}, syncInfo, {
+          channel: this.getChannelReference(syncInfo.channel),
         })),
       ),
     }))

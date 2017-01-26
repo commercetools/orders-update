@@ -42,5 +42,10 @@
       }
     }
   ],
-  "returnInfo": []
+  "returnInfo": [],
+  "syncInfo": [
+    {
+      "channel": "testChannel"
+    }
+  ]
 }
