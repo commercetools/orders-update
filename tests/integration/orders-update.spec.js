@@ -11,6 +11,9 @@ import stateSamples from '../helpers/state-samples.json'
 const PROJECT_KEY =
   process.env.CT_PROJECT_KEY || process.env.npm_config_projectkey
 
+const channelKey = 'OrderCsvFileExport'
+const channelRole = 'OrderExport'
+
 // Delete all API items from a given endpoint
 const clearEndpointData = (client, service) =>
   client[service]
@@ -40,6 +43,7 @@ test('the module should modify an existing order', (t) => {
       ),
     )
     // Create needed data
+    .then(() => ordersUpdate.client.channels.ensure(channelKey, channelRole))
     .then(() => ordersUpdate.client.productTypes.create(productTypeSample))
     .then(() => ordersUpdate.client.products.create(productSample))
     .then(() => Promise.all([
@@ -65,6 +69,10 @@ test('the module should modify an existing order', (t) => {
           actualTransitionDate: '2016-12-23T18:00:00.000Z',
         },
       ]
+      modifiedOrder.syncInfo = [{
+        channel: channelKey,
+        externalId: channelKey,
+      }]
 
       return ordersUpdate.processOrder(modifiedOrder)
     })
@@ -74,7 +82,6 @@ test('the module should modify an existing order', (t) => {
     // Check if data is modified as expected
     .then(({ body: { results: orders } }) => {
       const order = orders[0]
-
       t.equal(
         order.lineItems[0].state[0].quantity, 8999,
         'quantity of line item should be modified',
@@ -83,6 +90,12 @@ test('the module should modify an existing order', (t) => {
       t.equal(
         order.lineItems[0].state[1].quantity, 2,
         'quantity of line item should be modified',
+      )
+
+      t.equal(
+        order.syncInfo[0].externalId,
+        channelKey,
+        'SyncInfo is set',
       )
 
       t.end()
