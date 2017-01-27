@@ -11,6 +11,7 @@ A library that helps with updating [orders](https://dev.commercetools.com/http-a
 ## Supported order fields
 - lineItems
 - customLineItems
+- syncInfo
 
 ## Usage
 
