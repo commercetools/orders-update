@@ -230,7 +230,7 @@ test(`buildUpdateActions
   t.end()
 })
 
-test(`getIdFromKey
+test(`getReferenceFromKey
   should fetch state and return reference type and state id`, (t) => {
   const updater = newOrdersUpdate()
   const mockData = { id: '53 65 6c 77 79 6e' }
@@ -245,7 +245,7 @@ test(`getIdFromKey
     fetch: () => mockResult,
   }))
 
-  updater.getIdFromKey('testState', 'state', 'states').then((result) => {
+  updater.getReferenceFromKey('testState', 'state', 'states').then((result) => {
     t.equal(
       result.typeId,
       'state',
@@ -256,7 +256,7 @@ test(`getIdFromKey
   })
 })
 
-test(`getIdFromKey
+test(`getReferenceFromKey
   should return if no result is returned`, (t) => {
   const updater = newOrdersUpdate()
   const mockResult = Promise.resolve({
@@ -271,7 +271,7 @@ test(`getIdFromKey
     fetch: () => mockResult,
   }))
 
-  updater.getIdFromKey('testState', 'state', 'states')
+  updater.getReferenceFromKey('testState', 'state', 'states')
     .then(t.fail)
     .catch((error) => {
       t.equal(
@@ -283,7 +283,7 @@ test(`getIdFromKey
     })
 })
 
-test(`getIdFromKey
+test(`getReferenceFromKey
   should fetch channel and return reference type and state id`, (t) => {
   const updater = newOrdersUpdate()
   const mockData = { id: '277a3b20-8b31-4764-98ec-2fc720a98ba2' }
@@ -298,18 +298,19 @@ test(`getIdFromKey
     fetch: () => mockResult,
   }))
 
-  updater.getIdFromKey('testChannel', 'channel', 'channels').then((result) => {
-    t.equal(
-      result.typeId,
-      'channel',
-      'reference type \'channel\' is added to result',
-    )
-    t.ok(result.id, 'channel Id is added to result')
-    t.end()
-  })
+  updater.getReferenceFromKey('testChannel', 'channel', 'channels')
+    .then((result) => {
+      t.equal(
+        result.typeId,
+        'channel',
+        'reference type \'channel\' is added to result',
+      )
+      t.ok(result.id, 'channel Id is added to result')
+      t.end()
+    })
 })
 
-test(`getIdFromKey
+test(`getReference
   should ignore if channel field is an object`, (t) => {
   const updater = newOrdersUpdate()
   const stub = sinon.stub(updater.client.channels, 'where')
@@ -318,7 +319,7 @@ test(`getIdFromKey
     id: '277a3b20-8b31-4764-98ec-2fc720a98ba2',
   }
 
-  updater.getIdFromKey(mockChannel, 'channel', 'channels').then((result) => {
+  updater.getReference(mockChannel, 'channel', 'channels').then((result) => {
     t.false(stub.called, 'fetch channels method is not called')
     t.deepEqual(
       result,
@@ -329,7 +330,7 @@ test(`getIdFromKey
   })
 })
 
-test(`getIdFromKey
+test(`getReferenceFromKey
   should return if no result is returned`, (t) => {
   const updater = newOrdersUpdate()
   const mockResult = Promise.resolve({
@@ -344,7 +345,7 @@ test(`getIdFromKey
     fetch: () => mockResult,
   }))
 
-  updater.getIdFromKey('testChannel', 'channel', 'channels')
+  updater.getReferenceFromKey('testChannel', 'channel', 'channels')
     .then(t.fail)
     .catch((error) => {
       t.equal(
@@ -386,13 +387,13 @@ test(`expandReferences
     }],
   }
 
-  const getIdFromKeyStub = sinon.stub(updater, 'getIdFromKey')
+  const getReferenceFromKeyStub = sinon.stub(updater, 'getReferenceFromKey')
 
   const channelResult = {
     typeId: 'channel',
     id: '277a3b20-8b31-4764-98ec-2fc720a98ba2',
   }
-  getIdFromKeyStub
+  getReferenceFromKeyStub
     .withArgs(mockOrder.syncInfo[0].channel, 'channel', 'channels')
     .returns(channelResult)
 
@@ -400,7 +401,7 @@ test(`expandReferences
     typeId: 'state',
     id: '53 65 6c 77 79 6e',
   }
-  getIdFromKeyStub
+  getReferenceFromKeyStub
     .onCall(1)
     .returns(stateResult)
     .onCall(2)
@@ -408,18 +409,18 @@ test(`expandReferences
 
   updater.expandReferences(mockOrder).then((result) => {
     t.equal(
-      getIdFromKeyStub.callCount,
+      getReferenceFromKeyStub.callCount,
       3,
-      'getIdFromKey was called for each reference',
+      'getReferenceFromKey was called for each reference',
     )
     t.deepEqual(
-      getIdFromKeyStub.args,
+      getReferenceFromKeyStub.args,
       [
         [ 'testChannel', 'channel', 'channels' ],
         [ 'hey', 'state', 'states' ],
         [ 'ho', 'state', 'states' ],
       ],
-      'getIdFromKey is called with the right arguments',
+      'getReferenceFromKey is called with the right arguments',
     )
     t.deepEqual(
       result.syncInfo[0].channel,

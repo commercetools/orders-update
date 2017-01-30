@@ -64,12 +64,9 @@ export default class OrdersUpdate {
       })
   }
 
-  // Get the ID from the API based on the key
-  // getStateReference :: (String, String, String) -> Promise -> String
-  getIdFromKey (key, typeId, endpoint) {
-    if (typeof key === 'object')
-      return Promise.resolve(key)
-
+  // Get the ID reference from the API with the data key
+  // getReferenceFromKey :: (String, String, String) -> Promise -> Object
+  getReferenceFromKey (key, typeId, endpoint) {
     return bluebird.props({
       typeId,
       id: this.client[endpoint]
@@ -85,31 +82,39 @@ export default class OrdersUpdate {
     })
   }
 
+  // Wrapper function to make sure passed data returns a reference
+  // getReference :: (String, String, String) -> Promise -> Object
+  getReference (data, typeId, endpoint) {
+    if (data && data.typeId === typeId && data.id)
+      return Promise.resolve(data)
+
+    return this.getReferenceFromKey(data, typeId, endpoint)
+  }
+
   // Replace values that reference to something in the API
   // expandReferences :: Object -> Promise -> Object
   expandReferences (order) {
-    if (!order.lineItems)
-      order.lineItems = [] // eslint-disable-line no-param-reassign
-    if (!order.syncInfo)
-      order.syncInfo = [] // eslint-disable-line no-param-reassign
-
-    return bluebird.props(Object.assign({}, order, {
-      lineItems: bluebird.map(order.lineItems, lineItem =>
-        bluebird.props(Object.assign({}, lineItem, {
+    return bluebird.props({
+      ...order,
+      lineItems: bluebird.map(order.lineItems || [], lineItem =>
+        bluebird.props({
+          ...lineItem,
           state: bluebird.map(lineItem.state, state =>
-            bluebird.props(Object.assign({}, state, {
-              fromState: this.getIdFromKey(state.fromState, 'state', 'states'),
-              toState: this.getIdFromKey(state.toState, 'state', 'states'),
-            })),
+            bluebird.props({
+              ...state,
+              fromState: this.getReference(state.fromState, 'state', 'states'),
+              toState: this.getReference(state.toState, 'state', 'states'),
+            }),
           ),
-        })),
+        }),
       ),
-      syncInfo: bluebird.map(order.syncInfo, syncInfo =>
-        bluebird.props(Object.assign({}, syncInfo, {
-          channel: this.getIdFromKey(syncInfo.channel, 'channel', 'channels'),
-        })),
+      syncInfo: bluebird.map(order.syncInfo || [], syncInfo =>
+        bluebird.props({
+          ...syncInfo,
+          channel: this.getReference(syncInfo.channel, 'channel', 'channels'),
+        }),
       ),
-    }))
+    })
   }
 
   // Update order calling the API
