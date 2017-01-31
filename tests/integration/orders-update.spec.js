@@ -5,7 +5,7 @@ import test from 'tape'
 
 import productTypeSample from '../helpers/product-type-sample.json'
 import productSample from '../helpers/product-sample.json'
-import orderSample from '../helpers/order-sample.json'
+import orderSample from '../helpers/order-sample'
 import stateSamples from '../helpers/state-samples.json'
 
 const PROJECT_KEY =
@@ -52,7 +52,7 @@ test('the module should modify an existing order', (t) => {
     ]))
     // Import order sample with filled in state IDs
     .then((results) => {
-      const order = orderSample
+      const order = orderSample()
       order.lineItems[0].state[0].state.id = results[0].body.id
       order.lineItems[0].state[1].state.id = results[1].body.id
 

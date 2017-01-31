@@ -5,7 +5,7 @@ import test from 'tape'
 
 import buildOrderActions from '../../src/build-order-actions'
 
-import orderSample from '../helpers/order-sample.json'
+import orderSample from '../helpers/order-sample'
 
 const PROJECT_KEY =
   process.env.CT_PROJECT_KEY || process.env.npm_config_projectkey
@@ -56,7 +56,7 @@ test(`summaryReport
 
 test(`validateOrderData
   should resolve if the order data is valid`, (t) => {
-  newOrdersUpdate().validateOrderData(orderSample)
+  newOrdersUpdate().validateOrderData(orderSample())
     .then(() => t.end())
     .catch(t.fail)
 })
@@ -128,7 +128,7 @@ test(`processOrder
     update: () => mockResult,
   }))
 
-  updater.processOrder(orderSample).then(() => {
+  updater.processOrder(orderSample()).then(() => {
     t.equal(
       updater.summary.successfullImports, 1,
       'one order should be imported successfully',
@@ -158,13 +158,13 @@ test(`processOrder
   validateStub.returns(Promise.reject(new Error('validate kaboom')))
   validateStub.onCall(1).returns(Promise.resolve())
 
-  updater.processOrder(orderSample)
+  updater.processOrder(orderSample())
     .catch(t.fail)
 
   sinon.stub(updater, 'updateOrder', () =>
     Promise.reject(new Error('update kaboom')))
 
-  updater.processOrder(orderSample)
+  updater.processOrder(orderSample())
     .then(() => {
       t.equal(
         updater.summary.errors[0].error.message,
@@ -187,6 +187,30 @@ test(`processOrder
 })
 
 test(`updateOrder
+  should not update order if no update actions`, (t) => {
+  const updater = newOrdersUpdate()
+  const _orderSample = orderSample()
+  delete _orderSample.syncInfo
+  sinon.stub(updater.client.orders, 'where', () => ({
+    fetch: () => Promise.resolve({
+      body: {
+        total: 1,
+        results: [{
+          id: 'ageart3raefaetq4raefa',
+        }],
+      },
+    }),
+  }))
+  const stub = sinon.stub(updater.client.orders, 'byId')
+  updater.updateOrder(_orderSample)
+    .then((order) => {
+      t.deepEqual(order, _orderSample, 'Order object is return')
+      t.false(stub.called, 'fetch client by id method is not called')
+      t.end()
+    })
+})
+
+test(`updateOrder
   should handle missing order`, (t) => {
   const updater = newOrdersUpdate()
 
@@ -198,7 +222,7 @@ test(`updateOrder
     }),
   }))
 
-  updater.updateOrder(orderSample)
+  updater.updateOrder(orderSample())
     .then(t.fail)
     .catch((error) => {
       t.true(

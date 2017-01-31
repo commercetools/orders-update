@@ -1,13 +1,13 @@
 import buildOrderActions from 'build-order-actions'
 import test from 'tape'
 
-import orderSample from '../helpers/order-sample.json'
+import orderSample from '../helpers/order-sample'
 
 test(`syncInfo
   should build actions`, (t) => {
   const order = Object.assign(
     {},
-    orderSample,
+    orderSample(),
     {
       syncInfo: [
         {
@@ -77,7 +77,7 @@ test(`lineItems
   should build actions`, (t) => {
   const order = Object.assign(
     {},
-    orderSample,
+    orderSample(),
     {
       lineItems: [
         {
@@ -156,7 +156,7 @@ test(`lineItems
   should ignore lineItems without a state`, (t) => {
   const order = Object.assign(
     {},
-    orderSample,
+    orderSample(),
     {
       lineItems: [{
         id: '123',
@@ -165,7 +165,24 @@ test(`lineItems
   )
 
   const actions = buildOrderActions.lineItems(order)
+  t.deepEqual(actions, [], 'no actions are generated')
 
+  t.end()
+})
+test(`lineItems
+  should ignore lineItems without a fromState or toState`, (t) => {
+  const order = Object.assign(
+    {},
+    orderSample(),
+    {
+      lineItems: [{
+        id: '123',
+        state: [],
+      }],
+    },
+  )
+
+  const actions = buildOrderActions.lineItems(order)
   t.deepEqual(actions, [], 'no actions are generated')
 
   t.end()
@@ -175,7 +192,7 @@ test(`customLineItems
   should build actions`, (t) => {
   const order = Object.assign(
     {},
-    orderSample,
+    orderSample(),
     {
       customLineItems: [
         {
@@ -260,7 +277,7 @@ test(`customLineItems
   should ignore lineItems without a state`, (t) => {
   const order = Object.assign(
     {},
-    orderSample,
+    orderSample(),
     {
       customLineItems: [{
         id: '123',
