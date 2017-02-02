@@ -48,7 +48,7 @@ export default class OrdersUpdate {
   // processOrder :: Object -> () -> Object
   processOrder (order) {
     return this.validateOrderData(order)
-      .then(this.getReferences.bind(this))
+      .then(this.expandReferences.bind(this))
       .then(this.updateOrder.bind(this))
       .then((result) => {
         this.summary.inserted.push(order.orderNumber)
@@ -64,39 +64,57 @@ export default class OrdersUpdate {
       })
   }
 
-  // Get the state ID from the API based on the key
-  // getStateReference :: String -> Promise -> String
-  getStateReference (key) {
+  // Get the ID reference from the API with the data key
+  // getReferenceFromKey :: (String, String, String) -> Promise -> Object
+  getReferenceFromKey (key, typeId, endpoint) {
     return bluebird.props({
-      typeId: 'state',
-      id: this.client.states
-          .where(`key="${key}"`)
-          .fetch()
-          .then((res) => {
-            if (res.body.count === 0)
-              return bluebird.reject(new Error(
-                `Didn't find any match while resolving ${key} from the API`,
-              ))
-            return res.body.results[0].id
-          }),
+      typeId,
+      id: this.client[endpoint]
+        .where(`key="${key}"`)
+        .fetch()
+        .then((res) => {
+          if (res.body.count === 0)
+            return bluebird.reject(new Error(
+              `Didn't find any match while resolving ${key} from the API`,
+            ))
+          return res.body.results[0].id
+        }),
     })
   }
 
-  // Fills in the state key values of the passed order
-  // getReferences :: Object -> Promise -> Object
-  getReferences (order) {
-    return bluebird.props(Object.assign({}, order, {
-      lineItems: bluebird.map(order.lineItems, lineItem =>
-        bluebird.props(Object.assign({}, lineItem, {
+  // Wrapper function to make sure passed data returns a reference
+  // getReference :: (String, String, String) -> Promise -> Object
+  getReference (data, typeId, endpoint) {
+    if (data && data.typeId === typeId && data.id)
+      return Promise.resolve(data)
+
+    return this.getReferenceFromKey(data, typeId, endpoint)
+  }
+
+  // Replace values that reference to something in the API
+  // expandReferences :: Object -> Promise -> Object
+  expandReferences (order) {
+    return bluebird.props({
+      ...order,
+      lineItems: bluebird.map(order.lineItems || [], lineItem =>
+        bluebird.props({
+          ...lineItem,
           state: bluebird.map(lineItem.state, state =>
-            bluebird.props(Object.assign({}, state, {
-              fromState: this.getStateReference(state.fromState),
-              toState: this.getStateReference(state.toState),
-            })),
+            bluebird.props({
+              ...state,
+              fromState: this.getReference(state.fromState, 'state', 'states'),
+              toState: this.getReference(state.toState, 'state', 'states'),
+            }),
           ),
-        })),
+        }),
       ),
-    }))
+      syncInfo: bluebird.map(order.syncInfo || [], syncInfo =>
+        bluebird.props({
+          ...syncInfo,
+          channel: this.getReference(syncInfo.channel, 'channel', 'channels'),
+        }),
+      ),
+    })
   }
 
   // Update order calling the API
