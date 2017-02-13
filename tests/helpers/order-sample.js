@@ -45,6 +45,35 @@ export default function () {
         },
       },
     ],
+    customLineItems: [
+      {
+        name: {
+          en: 'apple',
+        },
+        money: {
+          currencyCode: 'EUR',
+          centAmount: -500,
+        },
+        slug: 'green apples',
+        quantity: 100,
+        state: [
+          {
+            quantity: 55,
+            state: {
+              typeId: 'state',
+              id: '',
+            },
+          },
+          {
+            quantity: 45,
+            state: {
+              typeId: 'state',
+              id: '',
+            },
+          },
+        ],
+      },
+    ],
     returnInfo: [],
     syncInfo: [
       {

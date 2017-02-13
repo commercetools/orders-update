@@ -96,6 +96,20 @@ export default class OrdersUpdate {
   expandReferences (order) {
     return bluebird.props({
       ...order,
+      // TODO: Refactor code into called function and possible separate modules
+      // TODO: Read up the spread
+      customLineItems: bluebird.map(order.customLineItems || [], lineItem =>
+        bluebird.props({
+          ...lineItem,
+          state: bluebird.map(lineItem.state, state =>
+            bluebird.props({
+              ...state,
+              fromState: this.getReference(state.fromState, 'state', 'states'),
+              toState: this.getReference(state.toState, 'state', 'states'),
+            }),
+          ),
+        }),
+      ),
       lineItems: bluebird.map(order.lineItems || [], lineItem =>
         bluebird.props({
           ...lineItem,
