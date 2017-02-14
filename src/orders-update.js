@@ -98,7 +98,7 @@ export default class OrdersUpdate {
       ...order,
       // TODO: Refactor code into called function and possible separate modules
       // TODO: Read up the spread
-      customLineItems: bluebird.map(order.customLineItems || [], lineItem =>
+      lineItems: bluebird.map(order.lineItems || [], lineItem =>
         bluebird.props({
           ...lineItem,
           state: bluebird.map(lineItem.state, state =>
@@ -110,7 +110,7 @@ export default class OrdersUpdate {
           ),
         }),
       ),
-      lineItems: bluebird.map(order.lineItems || [], lineItem =>
+      customLineItems: bluebird.map(order.customLineItems || [], lineItem =>
         bluebird.props({
           ...lineItem,
           state: bluebird.map(lineItem.state, state =>
