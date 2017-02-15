@@ -31,9 +31,17 @@ test('the module should modify an existing order', (t) => {
 
   getApiCredentials(PROJECT_KEY)
     .then((apiCredentials) => {
-      ordersUpdate = new OrdersUpdate({
-        config: apiCredentials,
-      })
+      ordersUpdate = new OrdersUpdate(
+        {
+          config: apiCredentials,
+        },
+        {
+          error: () => {},
+          warn: () => {},
+          info: () => {},
+          verbose: () => {},
+        },
+      )
     })
     // Clean up, remove everything from used services in testing
     .then(() =>
@@ -123,7 +131,7 @@ test('the module should modify an existing order', (t) => {
       t.end()
     })
     .catch((error) => {
-      console.log(JSON.stringify(error, null, 2))
+      process.stdout.write(JSON.stringify(error, null, 2))
       t.fail()
     })
 })
