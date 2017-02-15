@@ -64,6 +64,8 @@ export default class OrdersUpdate {
       })
   }
 
+  // Replace state references
+  // resolveState :: Array -> Promise -> Object
   resolveState (items) {
     return bluebird.map(items || [], lineItem =>
       bluebird.props({

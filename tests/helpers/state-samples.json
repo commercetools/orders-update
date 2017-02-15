@@ -12,19 +12,5 @@
     "name": {
       "en": "can do!"
     }
-  },
-  {
-    "key": "Useeemmeee",
-    "type": "LineItemState",
-    "name": {
-      "en": "sci-fi"
-    }
-  },
-  {
-    "key": "Nougat",
-    "type": "LineItemState",
-    "name": {
-      "en": "will do!"
-    }
   }
 ]

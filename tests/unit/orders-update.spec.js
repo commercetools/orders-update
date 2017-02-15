@@ -427,23 +427,12 @@ test(`expandReferences
     .withArgs(mockOrder.syncInfo[0].channel, 'channel', 'channels')
     .returns(channelResult)
 
-  const lineStateResult = {
+  const stateResult = {
     typeId: 'state',
     id: '53 65 6c 77 79 6e',
   }
-  const customLineStateResult = {
-    typeId: 'state',
-    id: '6c 9b 53 65 a0 24',
-  }
   getReferenceFromKeyStub
-    .onCall(1)
-    .returns(lineStateResult)
-    .onCall(2)
-    .returns(lineStateResult)
-    .onCall(3)
-    .returns(customLineStateResult)
-    .onCall(4)
-    .returns(customLineStateResult)
+    .returns(stateResult)
 
   updater.expandReferences(mockOrder).then((result) => {
     t.equal(
@@ -469,22 +458,22 @@ test(`expandReferences
     )
     t.deepEqual(
       result.lineItems[0].state[0].fromState,
-      lineStateResult,
+      stateResult,
       'Channel reference object is returned for lineItem',
     )
     t.deepEqual(
       result.lineItems[0].state[0].toState,
-      lineStateResult,
+      stateResult,
       'Channel reference object is returned for lineItem',
     )
     t.deepEqual(
       result.lineItems[0].state[0].fromState,
-      lineStateResult,
+      stateResult,
       'Channel reference object is returned for customLineItem',
     )
     t.deepEqual(
       result.lineItems[0].state[0].toState,
-      lineStateResult,
+      stateResult,
       'Channel reference object is returned for customLineItem',
     )
 
