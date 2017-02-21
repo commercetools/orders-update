@@ -388,7 +388,7 @@ test(`expandReferences
   updater.expandReferences({}).then((result) => {
     t.deepEqual(
       result,
-      { lineItems: [], syncInfo: [] },
+      { customLineItems: [], lineItems: [], syncInfo: [] },
       'Required arguments are filled in',
     )
     t.end()
@@ -396,7 +396,7 @@ test(`expandReferences
 })
 
 test(`expandReferences
-  should resolve lineItems and syncInfo reference`, (t) => {
+  should resolve lineItems, customLineItems and syncInfo reference`, (t) => {
   const updater = newOrdersUpdate()
   const mockOrder = {
     orderNumber: 'peanutbutter jelly',
@@ -404,6 +404,12 @@ test(`expandReferences
       state: [{
         fromState: 'hey',
         toState: 'ho',
+      }],
+    }],
+    customLineItems: [{
+      state: [{
+        fromState: 'foo',
+        toState: 'bar',
       }],
     }],
     syncInfo: [{
@@ -426,15 +432,12 @@ test(`expandReferences
     id: '53 65 6c 77 79 6e',
   }
   getReferenceFromKeyStub
-    .onCall(1)
-    .returns(stateResult)
-    .onCall(2)
     .returns(stateResult)
 
   updater.expandReferences(mockOrder).then((result) => {
     t.equal(
       getReferenceFromKeyStub.callCount,
-      3,
+      5,
       'getReferenceFromKey was called for each reference',
     )
     t.deepEqual(
@@ -443,6 +446,8 @@ test(`expandReferences
         [ 'testChannel', 'channel', 'channels' ],
         [ 'hey', 'state', 'states' ],
         [ 'ho', 'state', 'states' ],
+        [ 'foo', 'state', 'states'],
+        [ 'bar', 'state', 'states'],
       ],
       'getReferenceFromKey is called with the right arguments',
     )
@@ -454,12 +459,22 @@ test(`expandReferences
     t.deepEqual(
       result.lineItems[0].state[0].fromState,
       stateResult,
-      'Channel reference object is returned',
+      'Channel reference object is returned for lineItem',
     )
     t.deepEqual(
       result.lineItems[0].state[0].toState,
       stateResult,
-      'Channel reference object is returned',
+      'Channel reference object is returned for lineItem',
+    )
+    t.deepEqual(
+      result.lineItems[0].state[0].fromState,
+      stateResult,
+      'Channel reference object is returned for customLineItem',
+    )
+    t.deepEqual(
+      result.lineItems[0].state[0].toState,
+      stateResult,
+      'Channel reference object is returned for customLineItem',
     )
 
     t.end()

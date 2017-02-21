@@ -64,6 +64,23 @@ export default class OrdersUpdate {
       })
   }
 
+  // Replace state references
+  // resolveState :: Array -> Promise -> Object
+  resolveState (items) {
+    return bluebird.map(items || [], lineItem =>
+      bluebird.props({
+        ...lineItem,
+        state: bluebird.map(lineItem.state, state =>
+          bluebird.props({
+            ...state,
+            fromState: this.getReference(state.fromState, 'state', 'states'),
+            toState: this.getReference(state.toState, 'state', 'states'),
+          }),
+        ),
+      }),
+    )
+  }
+
   // Get the ID reference from the API with the data key
   // getReferenceFromKey :: (String, String, String) -> Promise -> Object
   getReferenceFromKey (key, typeId, endpoint) {
@@ -96,18 +113,8 @@ export default class OrdersUpdate {
   expandReferences (order) {
     return bluebird.props({
       ...order,
-      lineItems: bluebird.map(order.lineItems || [], lineItem =>
-        bluebird.props({
-          ...lineItem,
-          state: bluebird.map(lineItem.state, state =>
-            bluebird.props({
-              ...state,
-              fromState: this.getReference(state.fromState, 'state', 'states'),
-              toState: this.getReference(state.toState, 'state', 'states'),
-            }),
-          ),
-        }),
-      ),
+      lineItems: this.resolveState(order.lineItems),
+      customLineItems: this.resolveState(order.customLineItems),
       syncInfo: bluebird.map(order.syncInfo || [], syncInfo =>
         bluebird.props({
           ...syncInfo,

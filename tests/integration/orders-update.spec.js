@@ -31,9 +31,17 @@ test('the module should modify an existing order', (t) => {
 
   getApiCredentials(PROJECT_KEY)
     .then((apiCredentials) => {
-      ordersUpdate = new OrdersUpdate({
-        config: apiCredentials,
-      })
+      ordersUpdate = new OrdersUpdate(
+        {
+          config: apiCredentials,
+        },
+        {
+          error: () => {},
+          warn: () => {},
+          info: () => {},
+          verbose: () => {},
+        },
+      )
     })
     // Clean up, remove everything from used services in testing
     .then(() =>
@@ -55,6 +63,8 @@ test('the module should modify an existing order', (t) => {
       const order = orderSample()
       order.lineItems[0].state[0].state.id = results[0].body.id
       order.lineItems[0].state[1].state.id = results[1].body.id
+      order.customLineItems[0].state[0].state.id = results[0].body.id
+      order.customLineItems[0].state[1].state.id = results[1].body.id
 
       return ordersUpdate.client.orders.import(order)
     })
@@ -67,6 +77,14 @@ test('the module should modify an existing order', (t) => {
           fromState: stateSamples[0].key,
           toState: stateSamples[1].key,
           actualTransitionDate: '2016-12-23T18:00:00.000Z',
+        },
+      ]
+      modifiedOrder.customLineItems[0].state = [
+        {
+          quantity: 3,
+          fromState: stateSamples[0].key,
+          toState: stateSamples[1].key,
+          actualTransitionDate: '2016-12-23T20:00:00.000Z',
         },
       ]
       modifiedOrder.syncInfo = [{
@@ -93,6 +111,16 @@ test('the module should modify an existing order', (t) => {
       )
 
       t.equal(
+        order.customLineItems[0].state[0].quantity, 52,
+        'quantity of custom line item should be modified',
+      )
+
+      t.equal(
+        order.customLineItems[0].state[1].quantity, 48,
+        'quantity of custom line item should be modified',
+      )
+
+      t.equal(
         order.syncInfo[0].externalId,
         channelKey,
         'SyncInfo is set',
@@ -100,5 +128,8 @@ test('the module should modify an existing order', (t) => {
 
       t.end()
     })
-    .catch(t.fail)
+    .catch((error) => {
+      process.stdout.write(JSON.stringify(error, null, 2))
+      t.fail()
+    })
 })
