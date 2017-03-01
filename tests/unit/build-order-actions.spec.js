@@ -73,8 +73,8 @@ test(`syncInfo
   t.end()
 })
 
-test(`lineItems
-  should build actions`, (t) => {
+test(`buildOrderActions
+  should build lineItems actions`, (t) => {
   const order = Object.assign(
     {},
     orderSample(),
@@ -152,7 +152,7 @@ test(`lineItems
   t.end()
 })
 
-test(`lineItems
+test(`buildOrderActions
   should ignore lineItems without a state`, (t) => {
   const order = Object.assign(
     {},
@@ -169,7 +169,7 @@ test(`lineItems
 
   t.end()
 })
-test(`lineItems
+test(`buildOrderActions
   should ignore lineItems without a fromState or toState`, (t) => {
   const order = Object.assign(
     {},
@@ -188,8 +188,8 @@ test(`lineItems
   t.end()
 })
 
-test(`customLineItems
-  should build actions`, (t) => {
+test(`buildOrderActions
+  should build customLineItems actions`, (t) => {
   const order = Object.assign(
     {},
     orderSample(),
@@ -273,8 +273,8 @@ test(`customLineItems
   t.end()
 })
 
-test(`customLineItems
-  should ignore lineItems without a state`, (t) => {
+test(`buildOrderActions
+  should ignore customLineItems without a state`, (t) => {
   const order = Object.assign(
     {},
     orderSample(),
