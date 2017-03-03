@@ -92,28 +92,15 @@ test(`buildOrderActions
               typeId: 'state',
               id: 'other',
             },
+            _fromStateQty: 9000,
             actualTransitionDate: '2016-12-23T18:00:00.000Z',
-          }],
-        },
-        {
-          id: 'nalepa monday',
-          state: [{
-            quantity: 3,
-            fromState: {
-              typeId: 'state',
-              id: 'wat',
-            },
-            toState: {
-              typeId: 'state',
-              id: 'patattekes',
-            },
           }],
         },
       ],
     },
   )
 
-  const actions = buildOrderActions.lineItems(order)
+  const actions = buildOrderActions.lineItems(order, orderSample())
 
   t.deepEqual(
     actions,
@@ -132,21 +119,46 @@ test(`buildOrderActions
         },
         actualTransitionDate: '2016-12-23T18:00:00.000Z',
       },
-      {
-        action: 'transitionLineItemState',
-        lineItemId: 'nalepa monday',
-        quantity: 3,
-        fromState: {
-          typeId: 'state',
-          id: 'wat',
-        },
-        toState: {
-          typeId: 'state',
-          id: 'patattekes',
-        },
-      },
     ],
     'generated actions match expected data',
+  )
+
+  t.end()
+})
+
+test(`buildOrderActions
+  should detect line items duplicates and not build actions`, (t) => {
+  const order = Object.assign(
+    orderSample(),
+    {
+      lineItems: [
+        {
+          id: 'the glitch mob',
+          state: [{
+            quantity: 100,
+            fromState: {
+              typeId: 'state',
+              id: '73;65;6c;77;79;6e',
+            },
+            toState: {
+              typeId: 'state',
+              id: 'other',
+            },
+            _fromStateQty: 6000,
+            actualTransitionDate: '2016-12-23T18:00:00.000Z',
+          }],
+        },
+      ],
+    },
+  )
+
+  const existingOrder = orderSample()
+  const actions = buildOrderActions.lineItems(order, existingOrder)
+  const expectedActions = []
+  t.deepEqual(
+    actions,
+    expectedActions,
+    'No actions is generated',
   )
 
   t.end()
@@ -164,7 +176,7 @@ test(`buildOrderActions
     },
   )
 
-  const actions = buildOrderActions.lineItems(order)
+  const actions = buildOrderActions.lineItems(order, orderSample())
   t.deepEqual(actions, [], 'no actions are generated')
 
   t.end()
@@ -182,7 +194,7 @@ test(`buildOrderActions
     },
   )
 
-  const actions = buildOrderActions.lineItems(order)
+  const actions = buildOrderActions.lineItems(order, orderSample())
   t.deepEqual(actions, [], 'no actions are generated')
 
   t.end()
@@ -207,21 +219,8 @@ test(`buildOrderActions
               typeId: 'state',
               id: 'crocodile',
             },
+            _fromStateQty: 55,
             actualTransitionDate: '2016-12-23T18:00:00.000Z',
-          }],
-        },
-        {
-          id: 'pixels',
-          state: [{
-            quantity: 3,
-            fromState: {
-              typeId: 'state',
-              id: 'tricksels',
-            },
-            toState: {
-              typeId: 'state',
-              id: 'kicksels',
-            },
           }],
         },
         {
@@ -234,7 +233,7 @@ test(`buildOrderActions
     },
   )
 
-  const actions = buildOrderActions.customLineItems(order)
+  const actions = buildOrderActions.customLineItems(order, orderSample())
 
   t.deepEqual(
     actions,
@@ -252,19 +251,6 @@ test(`buildOrderActions
           id: 'crocodile',
         },
         actualTransitionDate: '2016-12-23T18:00:00.000Z',
-      },
-      {
-        action: 'transitionCustomLineItemState',
-        customLineItemId: 'pixels',
-        quantity: 3,
-        fromState: {
-          typeId: 'state',
-          id: 'tricksels',
-        },
-        toState: {
-          typeId: 'state',
-          id: 'kicksels',
-        },
       },
     ],
     'generated actions match expected data',
@@ -285,9 +271,41 @@ test(`buildOrderActions
     },
   )
 
-  const actions = buildOrderActions.customLineItems(order)
+  const actions = buildOrderActions.customLineItems(order, orderSample())
 
   t.deepEqual(actions, [], 'no actions are generated')
 
+  t.end()
+})
+
+test(`buildOrderActions::checkIffromStateQtytally
+  should return true if fromStateQty equal quantity
+  in exisiting order`, (t) => {
+  const order = orderSample()
+  const actual = buildOrderActions.checkIffromStateQtytally(
+    order,
+    '73;65;6c;77;79;6e',
+    9000,
+    'lineItems',
+  )
+  const expected = true
+  const message = 'qty in fromState tallies with the qty passed in'
+  t.equal(actual, expected, message)
+  t.end()
+})
+
+test(`buildOrderActions::checkIffromStateQtytally
+  should return false if fromStateQty differs from quantity
+  in exisiting order`, (t) => {
+  const order = orderSample()
+  const actual = buildOrderActions.checkIffromStateQtytally(
+    order,
+    '73;65;6c;77;79;6e',
+    7000,
+    'lineItems',
+  )
+  const expected = false
+  const message = 'qty in fromState does not tally with the qty passed in'
+  t.equal(actual, expected, message)
   t.end()
 })

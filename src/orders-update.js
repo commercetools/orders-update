@@ -133,7 +133,7 @@ export default class OrdersUpdate {
       .then(({ body: { total, results: existingOrders } }) => {
         if (total === 1) {
           const existingOrder = existingOrders[0]
-          const actions = this.buildUpdateActions(order)
+          const actions = this.buildUpdateActions(order, existingOrder)
 
           // Do not call the API when there are no changes
           if (actions.length > 0)
@@ -157,12 +157,12 @@ export default class OrdersUpdate {
   // Create API action objects based on the order data
   // buildUpdateActions :: Object -> [Object]
   // eslint-disable-next-line class-methods-use-this
-  buildUpdateActions (order) {
+  buildUpdateActions (order, existingOrder) {
     const actions = []
 
     Object.keys(order).forEach((field) => {
       if (typeof buildOrderActions[field] === 'function')
-        actions.push(...buildOrderActions[field](order))
+        actions.push(...buildOrderActions[field](order, existingOrder))
     })
 
     this.logger.verbose(`Build update actions: ${actions}`)
