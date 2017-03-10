@@ -26,7 +26,7 @@ export default function () {
             quantity: 9000,
             state: {
               typeId: 'state',
-              id: '',
+              id: '73;65;6c;77;79;6e',
             },
           },
           {
@@ -61,14 +61,14 @@ export default function () {
             quantity: 55,
             state: {
               typeId: 'state',
-              id: '',
+              id: 'melodymania',
             },
           },
           {
             quantity: 45,
             state: {
               typeId: 'state',
-              id: '',
+              id: 'crocodile',
             },
           },
         ],

@@ -1,12 +1,6 @@
-import bluebird from 'bluebird'
-import getApiCredentials from 'get-api-credentials'
-import OrdersUpdate from 'orders-update'
 import test from 'tape'
 
-import productTypeSample from '../helpers/product-type-sample.json'
-import productSample from '../helpers/product-sample.json'
-import orderSample from '../helpers/order-sample'
-import stateSamples from '../helpers/state-samples.json'
+import { setup, modifyOrder, initOrderUpdate } from './utils.spec'
 
 const PROJECT_KEY =
   process.env.CT_PROJECT_KEY || process.env.npm_config_projectkey
@@ -14,89 +8,32 @@ const PROJECT_KEY =
 const channelKey = 'OrderCsvFileExport'
 const channelRole = 'OrderExport'
 
-// Delete all API items from a given endpoint
-const clearEndpointData = (client, service) =>
-  client[service]
-    .all().fetch()
-    .then(data => data.body.results.filter(item => !item.builtIn))
-    .then(items => Promise.all(
-      items.map(item => client[service]
-        .byId(item.id)
-        .delete(item.version)),
-      ),
-    )
-
 test('the module should modify an existing order', (t) => {
   let ordersUpdate
+  const params = {
+    projectKey: PROJECT_KEY,
+    endpoints: ['orders', 'products', 'productTypes', 'states'],
+    channel: {
+      key: channelKey,
+      role: channelRole,
+    },
+  }
 
-  getApiCredentials(PROJECT_KEY)
-    .then((apiCredentials) => {
-      ordersUpdate = new OrdersUpdate(
-        {
-          config: apiCredentials,
-        },
-        {
-          error: () => {},
-          warn: () => {},
-          info: () => {},
-          verbose: () => {},
-        },
-      )
-    })
-    // Clean up, remove everything from used services in testing
-    .then(() =>
-      bluebird.each(
-        ['orders', 'products', 'productTypes', 'states'],
-        clearEndpointData.bind(null, ordersUpdate.client),
-      ),
-    )
-    // Create needed data
-    .then(() => ordersUpdate.client.channels.ensure(channelKey, channelRole))
-    .then(() => ordersUpdate.client.productTypes.create(productTypeSample))
-    .then(() => ordersUpdate.client.products.create(productSample))
-    .then(() => Promise.all([
-      ordersUpdate.client.states.create(stateSamples[0]),
-      ordersUpdate.client.states.create(stateSamples[1]),
-    ]))
-    // Import order sample with filled in state IDs
-    .then((results) => {
-      const order = orderSample()
-      order.lineItems[0].state[0].state.id = results[0].body.id
-      order.lineItems[0].state[1].state.id = results[1].body.id
-      order.customLineItems[0].state[0].state.id = results[0].body.id
-      order.customLineItems[0].state[1].state.id = results[1].body.id
-
-      return ordersUpdate.client.orders.import(order)
-    })
+  setup(params)
     // Modify data and send to module
-    .then((orderResult) => {
-      const modifiedOrder = Object.assign({}, orderResult.body)
-      modifiedOrder.lineItems[0].state = [
-        {
-          quantity: 1,
-          fromState: stateSamples[0].key,
-          toState: stateSamples[1].key,
-          actualTransitionDate: '2016-12-23T18:00:00.000Z',
-        },
-      ]
-      modifiedOrder.customLineItems[0].state = [
-        {
-          quantity: 3,
-          fromState: stateSamples[0].key,
-          toState: stateSamples[1].key,
-          actualTransitionDate: '2016-12-23T20:00:00.000Z',
-        },
-      ]
-      modifiedOrder.syncInfo = [{
-        channel: channelKey,
-        externalId: channelKey,
-      }]
-
-      return ordersUpdate.processOrder(modifiedOrder)
-    })
-    .then(order => ordersUpdate.client.orders
+    .then(orderResult =>
+      initOrderUpdate(PROJECT_KEY)
+        .then((_ordersUpdate) => {
+          ordersUpdate = _ordersUpdate
+          const modifiedOrder = modifyOrder(orderResult.body, channelKey)
+          return ordersUpdate.processOrder(modifiedOrder)
+        }),
+    )
+    .then(order =>
+      ordersUpdate.client.orders
         .where(`orderNumber="${order.orderNumber}"`)
-        .fetch())
+        .fetch(),
+    )
     // Check if data is modified as expected
     .then(({ body: { results: orders } }) => {
       const order = orders[0]
@@ -126,10 +63,47 @@ test('the module should modify an existing order', (t) => {
         'SyncInfo is set',
       )
 
+      t.test('line item status update should be idempotent', (q) => {
+        ordersUpdate.summary = {
+          errors: [],
+          inserted: [],
+          successfullImports: 0,
+        }
+        const modifiedOrder = modifyOrder(order, channelKey)
+        return ordersUpdate.processOrder(modifiedOrder)
+          .then(orderx =>
+            ordersUpdate.client.orders
+              .where(`orderNumber="${orderx.orderNumber}"`).fetch(),
+          )
+          .then(({ body: { results: _orders } }) => {
+            const _order = _orders[0]
+
+            q.equal(
+              _order.lineItems[0].state[0].quantity, 8999,
+              'quantity of line item should not be modified',
+            )
+
+            q.equal(
+              _order.lineItems[0].state[1].quantity, 2,
+              'quantity of line item should not be modified',
+            )
+
+            q.equal(
+              _order.customLineItems[0].state[0].quantity, 52,
+              'quantity of custom line item should not be modified',
+            )
+
+            q.equal(
+              _order.customLineItems[0].state[1].quantity, 48,
+              'quantity of custom line item should not be modified',
+            )
+            q.end()
+          })
+      })
       t.end()
     })
     .catch((error) => {
-      process.stdout.write(JSON.stringify(error, null, 2))
-      t.fail()
+      console.log(error)
+      t.fail(error)
     })
 })

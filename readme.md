@@ -28,6 +28,22 @@ In order for the CLI to update orders, the file to update from must be JSON and 
   ]
 }
 ```
+
+To update lineItems/customLineItems status the order object have to follow this format
+```
+{
+  orderNumber: 1234567,
+  lineItems: [{
+    state: [{
+      fromState: 'statekey',
+      toState: 'statekey',
+      quantity: 20, // The number of quantity you want to migrate from the a state to another.
+      _fromStateQty: 100 // The quantity in the 'fromState' before the update. More information about why this is necessary [here](https://github.com/commercetools/orders-update/issues/11)
+    }]
+  }]
+}
+
+```
 Then you can use this file using the cli:
 ```
 sphere-node-cli -t order -p my-project-key -f ./orders.json
