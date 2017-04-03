@@ -1,11 +1,4 @@
-import keyBy from 'lodash.keyby'
-
-const findReturnInfo = (returnInfo, list) =>
-  list.find(item => (
-    item.returnTrackingId === returnInfo.returnTrackingId
-    &&
-    item.returnDate === returnInfo.returnDate
-  ))
+import { OrderSync } from 'sphere-node-sdk'
 
 const buildOrderMethods = {
   customLineItems: (order, existingOrder) =>
@@ -93,53 +86,28 @@ const buildOrderMethods = {
     return actions
   }, []),
 
-  returnItemState: (item, existingItem) => {
-    const actions = []
-    if (!existingItem)
-      return actions
-
-    if (item.shipmentState !== existingItem.shipmentState)
-      actions.push({
-        action: 'setReturnShipmentState',
-        returnItemId: item.id,
-        shipmentState: item.shipmentState,
-      })
-
-    if (item.paymentState !== existingItem.paymentState)
-      actions.push({
-        action: 'setReturnPaymentState',
-        returnItemId: item.id,
-        paymentState: item.paymentState,
-      })
-    return actions
-  },
-
   returnInfo: (order, existingOrder) => {
-    const actions = []
+    const sync = new OrderSync()
+    const enabledActions = [
+      'setReturnShipmentState',
+      'setReturnPaymentState',
+      'addReturnInfo',
+    ]
 
-    order.returnInfo.forEach((returnInfo) => {
-      const existingReturnInfo = findReturnInfo(
-        returnInfo, existingOrder.returnInfo)
+    /* eslint-disable no-param-reassign */
+    order.returnInfo = order.returnInfo || []
+    existingOrder.returnInfo = existingOrder.returnInfo || []
+    /* eslint-enable no-param-reassign */
 
-      // if returnInfo was not found in existing items
-      if (!existingReturnInfo)
-        actions.push({
-          action: 'addReturnInfo',
-          ...returnInfo,
-        })
+    const payload = sync.config()
+        .buildActions(order, existingOrder)
+        .getUpdatePayload()
 
-      // if returnInfo exists check returnItems payment and shipment states
-      else if (existingReturnInfo) {
-        const existingItems = keyBy(existingReturnInfo.items, 'id')
+    const actions = (payload && payload.actions) || []
 
-        returnInfo.items.forEach((returnItem) => {
-          actions.push(...buildOrderMethods.returnItemState(
-            returnItem, existingItems[returnItem.id],
-          ))
-        })
-      }
-    })
+    // filter only whitelisted actions
     return actions
+      .filter(action => enabledActions.indexOf(action.action) >= 0)
   },
 }
 

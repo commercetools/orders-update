@@ -39,7 +39,6 @@
     "ajv": "^4.9.0",
     "babel-plugin-transform-object-rest-spread": "^6.22.0",
     "bluebird": "^3.4.6",
-    "lodash.keyby": "^4.6.0",
     "serialize-error": "^2.1.0",
     "sinon": "^1.17.6",
     "sphere-node-sdk": "^1.16.2",
