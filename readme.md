@@ -12,6 +12,7 @@ A library that helps with updating [orders](https://dev.commercetools.com/http-a
 - customLineItems
 - lineItems
 - syncInfo
+- returnInfo
 
 ## Usage
 
@@ -49,6 +50,7 @@ Then you can use this file using the cli:
 sphere-node-cli -t order -p my-project-key -f ./orders.json
 ```
 
+When updating `returnInfo`, all items are compared against existing return info items. If there is a matching returnInfo item (matched by keys `returnTrackingId` and `returnDate`) script goes through returnItems and sets new `shipmentState` or `paymentState` if they differ from old values. If returnInfo item is not found it is inserted as a new item. 
 ### Direct usage
 
 If you want more control, you can also use this library directly in JavaScript. To do this you first need to install it:

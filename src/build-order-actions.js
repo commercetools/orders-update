@@ -1,3 +1,5 @@
+import { OrderSync } from 'sphere-node-sdk'
+
 const buildOrderMethods = {
   customLineItems: (order, existingOrder) =>
     order.customLineItems.reduce((actions, lineItem) => {
@@ -83,6 +85,30 @@ const buildOrderMethods = {
 
     return actions
   }, []),
+
+  returnInfo: (order, existingOrder) => {
+    const sync = new OrderSync()
+    const enabledActions = [
+      'setReturnShipmentState',
+      'setReturnPaymentState',
+      'addReturnInfo',
+    ]
+
+    /* eslint-disable no-param-reassign */
+    order.returnInfo = order.returnInfo || []
+    existingOrder.returnInfo = existingOrder.returnInfo || []
+    /* eslint-enable no-param-reassign */
+
+    const payload = sync.config()
+        .buildActions(order, existingOrder)
+        .getUpdatePayload()
+
+    const actions = (payload && payload.actions) || []
+
+    // filter only whitelisted actions
+    return actions
+      .filter(action => enabledActions.indexOf(action.action) >= 0)
+  },
 }
 
 export default buildOrderMethods

@@ -54,7 +54,7 @@ export default class OrdersUpdate {
         this.summary.inserted.push(order.orderNumber)
         this.summary.successfullImports += 1
 
-        return result.body
+        return result
       })
       .catch((error) => {
         this.summary.errors.push({
@@ -70,13 +70,16 @@ export default class OrdersUpdate {
     return bluebird.map(items || [], lineItem =>
       bluebird.props({
         ...lineItem,
-        state: bluebird.map(lineItem.state, state =>
-          bluebird.props({
-            ...state,
-            fromState: this.getReference(state.fromState, 'state', 'states'),
-            toState: this.getReference(state.toState, 'state', 'states'),
-          }),
-        ),
+        state: bluebird.map(lineItem.state, state => (
+          // do not resolve states when there is no transition
+          state.fromState && state.toState
+            ? bluebird.props({
+              ...state,
+              fromState: this.getReference(state.fromState, 'state', 'states'),
+              toState: this.getReference(state.toState, 'state', 'states'),
+            })
+            : state
+        )),
       }),
     )
   }
@@ -143,6 +146,7 @@ export default class OrdersUpdate {
                 version: existingOrder.version,
                 actions,
               })
+              .then(result => result.body)
 
           return order
         }
