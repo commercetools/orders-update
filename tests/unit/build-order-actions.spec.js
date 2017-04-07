@@ -1,7 +1,28 @@
+import _ from 'underscore'
 import buildOrderActions from 'build-order-actions'
 import test from 'tape'
 
 import orderSample from '../helpers/order-sample'
+
+const exampleDelivery = {
+  id: 'delivery_id',
+  items: [
+    {
+      id: 'ca536903-f1e9-4937-a2dc-56c0cef6dab8',
+      quantity: 1,
+    },
+  ],
+  parcels: [
+    {
+      id: 'parcel_id',
+      trackingData: {
+        trackingId: '447883009643',
+        carrier: 'dhl',
+        isReturn: false,
+      },
+    },
+  ],
+}
 
 test(`syncInfo
   should build actions`, (t) => {
@@ -309,3 +330,101 @@ test(`buildOrderActions::checkIffromStateQtytally
   t.equal(actual, expected, message)
   t.end()
 })
+
+test(`buildOrderActions::deliveries
+  should add new deliveries`, (t) => {
+  const exampleOrder = orderSample()
+  const delivery = _.deepClone(exampleDelivery)
+  const expected = [
+    {
+      action: 'addDelivery',
+      items: delivery.items,
+      parcels: delivery.parcels,
+    },
+  ]
+
+  delete delivery.id
+  const order = Object.assign(
+    {},
+    exampleOrder,
+    {
+      shippingInfo: {
+        deliveries: [ delivery ],
+      },
+    },
+  )
+
+  const actions = buildOrderActions.shippingInfo(order, orderSample())
+  t.deepEqual(actions, expected, 'addDelivery action should be generated')
+
+  t.end()
+})
+
+
+test(`buildOrderActions::deliveries
+  should add parcel to delivery`, (t) => {
+  const delivery = _.deepClone(exampleDelivery)
+
+  const newParcel = {
+    id: 'parcel_id_2',
+    measurements: {
+      heightInMillimeter: 200,
+      lengthInMillimeter: 200,
+      widthInMillimeter: 200,
+      weightInGram: 200,
+    },
+    trackingData: {
+      trackingId: '1Z6185W16894827591',
+      carrier: 'UPS',
+      provider: 'shipcloud.io',
+      providerTransaction: '549796981774cd802e9636ded5608bfa1ecce9ad',
+      isReturn: true,
+    },
+  }
+
+  const expected = _.deepClone(newParcel)
+  expected.action = 'addParcelToDelivery'
+  expected.deliveryId = delivery.id
+
+  const oldOrder = Object.assign(
+    {},
+    orderSample(),
+    {
+      shippingInfo: {
+        deliveries: [ delivery ],
+      },
+    },
+  )
+
+  const newOrder = _.deepClone(oldOrder)
+  newOrder.shippingInfo.deliveries[0].parcels.push(newParcel)
+
+  const actions = buildOrderActions.shippingInfo(newOrder, oldOrder)
+  t.deepEqual(actions, [expected],
+    'addParcelToDelivery action should be generated')
+
+  t.end()
+})
+
+
+test(`buildOrderActions::deliveries
+  should not add same delivery`, (t) => {
+  const exampleOrder = orderSample()
+  const delivery = _.deepClone(exampleDelivery)
+
+  const order = Object.assign(
+    {},
+    exampleOrder,
+    {
+      shippingInfo: {
+        deliveries: [ delivery ],
+      },
+    },
+  )
+
+  const actions = buildOrderActions.shippingInfo(order, order)
+  t.deepEqual(actions, [], 'should not generate any action')
+
+  t.end()
+})
+

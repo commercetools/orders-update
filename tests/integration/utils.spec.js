@@ -4,6 +4,8 @@ import bluebird from 'bluebird'
 
 import productTypeSample from '../helpers/product-type-sample.json'
 import productSample from '../helpers/product-sample.json'
+import shippingMethodSample from '../helpers/shipping-method-sample.json'
+import taxCategorySample from '../helpers/tax-category-sample.json'
 import orderSample from '../helpers/order-sample'
 import stateSamples from '../helpers/state-samples.json'
 
@@ -19,10 +21,15 @@ export function setup ({ projectKey, endpoints, channel }) {
     .then(() => ordersUpdate.client.channels.ensure(channel.key, channel.role))
     .then(() => ordersUpdate.client.productTypes.create(productTypeSample))
     .then(() => ordersUpdate.client.products.create(productSample))
-    .then(() => Promise.all([
-      ordersUpdate.client.states.create(stateSamples[0]),
-      ordersUpdate.client.states.create(stateSamples[1]),
-    ]))
+    .then(() => ordersUpdate.client.taxCategories.create(taxCategorySample))
+    .then((taxCategory) => {
+      shippingMethodSample.taxCategory.id = taxCategory.body.id
+      return Promise.all([
+        ordersUpdate.client.states.create(stateSamples[0]),
+        ordersUpdate.client.states.create(stateSamples[1]),
+        ordersUpdate.client.shippingMethods.create(shippingMethodSample),
+      ])
+    })
     // Import order sample with filled in state IDs
     .then((results) => {
       const order = orderSample()
@@ -30,6 +37,23 @@ export function setup ({ projectKey, endpoints, channel }) {
       order.lineItems[0].state[1].state.id = results[1].body.id
       order.customLineItems[0].state[0].state.id = results[0].body.id
       order.customLineItems[0].state[1].state.id = results[1].body.id
+      order.shippingInfo = {
+        shippingMethodName: 'DHL GB',
+        shippingMethod: {
+          typeId: 'shipping-method',
+          id: results[2].body.id,
+        },
+        price: {
+          currencyCode: 'EUR',
+          centAmount: 950,
+        },
+        shippingRate: {
+          price: {
+            currencyCode: 'EUR',
+            centAmount: 950,
+          },
+        },
+      }
 
       return ordersUpdate.client.orders.import(order)
     })

@@ -1,3 +1,4 @@
+import _ from 'underscore'
 import { OrderSync } from 'sphere-node-sdk'
 
 const buildOrderMethods = {
@@ -102,6 +103,38 @@ const buildOrderMethods = {
     const payload = sync.config()
         .buildActions(order, existingOrder)
         .getUpdatePayload()
+
+    const actions = (payload && payload.actions) || []
+
+    // filter only whitelisted actions
+    return actions
+      .filter(action => enabledActions.indexOf(action.action) >= 0)
+  },
+
+  shippingInfo: (order, existingOrder) => {
+    const sync = new OrderSync()
+    const enabledActions = [
+      'addDelivery',
+      'addParcelToDelivery',
+    ]
+
+    /* eslint-disable no-param-reassign */
+    order = _.defaults(order, {
+      shippingInfo: {
+        deliveries: [],
+      },
+    })
+
+    existingOrder = _.defaults(existingOrder, {
+      shippingInfo: {
+        deliveries: [],
+      },
+    })
+    /* eslint-enable no-param-reassign */
+
+    const payload = sync.config()
+      .buildActions(order, existingOrder)
+      .getUpdatePayload()
 
     const actions = (payload && payload.actions) || []
 

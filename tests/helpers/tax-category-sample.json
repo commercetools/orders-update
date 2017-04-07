@@ -1,0 +1,13 @@
+{
+  "name": "tax_default",
+  "rates": [
+    {
+      "name": "DE",
+      "amount": 0.19,
+      "includedInPrice": true,
+      "country": "DE",
+      "id": "abcd",
+      "subRates": []
+    }
+  ]
+}

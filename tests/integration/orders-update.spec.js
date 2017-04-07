@@ -5,6 +5,10 @@ import { setup, modifyOrder, initOrderUpdate } from './utils.spec'
 const PROJECT_KEY =
   process.env.CT_PROJECT_KEY || process.env.npm_config_projectkey
 
+const endpoints = [
+  'orders', 'products', 'productTypes',
+  'states', 'shippingMethods', 'taxCategories',
+]
 const channelKey = 'OrderCsvFileExport'
 const channelRole = 'OrderExport'
 
@@ -12,7 +16,7 @@ test('the module should modify an existing order', (t) => {
   let ordersUpdate
   const params = {
     projectKey: PROJECT_KEY,
-    endpoints: ['orders', 'products', 'productTypes', 'states'],
+    endpoints,
     channel: {
       key: channelKey,
       role: channelRole,
@@ -114,7 +118,7 @@ test('the module should not modify an order without changes', (t) => {
   let initialOrder
   const params = {
     projectKey: PROJECT_KEY,
-    endpoints: ['orders', 'products', 'productTypes', 'states'],
+    endpoints,
     channel: {
       key: channelKey,
       role: channelRole,
@@ -157,7 +161,7 @@ test('the module should update return info', (t) => {
   let ordersUpdate
   const params = {
     projectKey: PROJECT_KEY,
-    endpoints: ['orders', 'products', 'productTypes', 'states'],
+    endpoints,
     channel: {
       key: channelKey,
       role: channelRole,
@@ -285,6 +289,57 @@ test('the module should update return info', (t) => {
     })
     .catch((error) => {
       console.error(error)
+      t.fail(error)
+    })
+})
+
+test('the module should update deliveries', (t) => {
+  let orderUpdater
+  const params = {
+    projectKey: PROJECT_KEY,
+    endpoints,
+    channel: {
+      key: channelKey,
+      role: channelRole,
+    },
+  }
+
+  setup(params)
+  // Modify data and send to module
+    .then(order =>
+      initOrderUpdate(PROJECT_KEY)
+        .then(_orderUpdater => (orderUpdater = _orderUpdater))
+        .return(order),
+    )
+    .then((order) => {
+      const modifiedOrder = Object.assign({}, order.body)
+
+      modifiedOrder.shippingInfo.deliveries.push({
+        items: [{
+          id: modifiedOrder.lineItems[0].id,
+          quantity: modifiedOrder.lineItems[0].quantity,
+        }],
+        parcels: [{
+          trackingData: {
+            trackingId: '447883009643',
+            carrier: 'dhl',
+            isReturn: false,
+          },
+        }],
+      })
+
+      return orderUpdater.processOrder(modifiedOrder)
+    })
+    .then((orderResult) => {
+      const shippingInfo = orderResult.shippingInfo
+
+      t.equal(shippingInfo.deliveries.length, 1,
+        'deliveries should have one item')
+      t.equal(shippingInfo.deliveries[0].parcels[0].trackingData.carrier, 'dhl',
+        'deliveries should have dhl parcel')
+      t.end()
+    })
+    .catch((error) => {
       t.fail(error)
     })
 })
