@@ -13,6 +13,7 @@ A library that helps with updating [orders](https://dev.commercetools.com/http-a
 - lineItems
 - syncInfo
 - returnInfo
+- shippingInfo.deliveries
 
 ## Usage
 
