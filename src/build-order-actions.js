@@ -119,7 +119,6 @@ const buildOrderMethods = {
 
     const modOrder = { shippingInfo: { deliveries: [] }, ...order }
     const modExistOrder = { shippingInfo: { deliveries: [] }, ...existingOrder }
-
     const payload = sync.config()
       .buildActions(modOrder, modExistOrder)
       .getUpdatePayload()

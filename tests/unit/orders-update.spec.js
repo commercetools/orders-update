@@ -197,6 +197,9 @@ test(`updateOrder
         total: 1,
         results: [{
           id: 'ageart3raefaetq4raefa',
+          shippingInfo: {
+            deliveries: [],
+          },
         }],
       },
     }),
