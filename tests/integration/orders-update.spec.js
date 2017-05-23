@@ -1,10 +1,15 @@
 import test from 'tape'
 
 import { setup, modifyOrder, initOrderUpdate } from './utils.spec'
+import orderDeliverySample from '../helpers/order-delivery-sample.json'
 
 const PROJECT_KEY =
   process.env.CT_PROJECT_KEY || process.env.npm_config_projectkey
 
+const endpoints = [
+  'orders', 'products', 'productTypes',
+  'states', 'shippingMethods', 'taxCategories',
+]
 const channelKey = 'OrderCsvFileExport'
 const channelRole = 'OrderExport'
 
@@ -12,7 +17,7 @@ test('the module should modify an existing order', (t) => {
   let ordersUpdate
   const params = {
     projectKey: PROJECT_KEY,
-    endpoints: ['orders', 'products', 'productTypes', 'states'],
+    endpoints,
     channel: {
       key: channelKey,
       role: channelRole,
@@ -114,7 +119,7 @@ test('the module should not modify an order without changes', (t) => {
   let initialOrder
   const params = {
     projectKey: PROJECT_KEY,
-    endpoints: ['orders', 'products', 'productTypes', 'states'],
+    endpoints,
     channel: {
       key: channelKey,
       role: channelRole,
@@ -157,7 +162,7 @@ test('the module should update return info', (t) => {
   let ordersUpdate
   const params = {
     projectKey: PROJECT_KEY,
-    endpoints: ['orders', 'products', 'productTypes', 'states'],
+    endpoints,
     channel: {
       key: channelKey,
       role: channelRole,
@@ -285,6 +290,139 @@ test('the module should update return info', (t) => {
     })
     .catch((error) => {
       console.error(error)
+      t.fail(error)
+    })
+})
+
+test('the module should update deliveries', (t) => {
+  let orderUpdater
+  const params = {
+    projectKey: PROJECT_KEY,
+    endpoints,
+    channel: {
+      key: channelKey,
+      role: channelRole,
+    },
+  }
+
+  setup(params)
+  // Modify data and send to module
+    .then(order =>
+      initOrderUpdate(PROJECT_KEY)
+        .then(_orderUpdater => (orderUpdater = _orderUpdater))
+        .return(order),
+    )
+    .then((order) => {
+      const modifiedOrder = Object.assign({}, order.body)
+
+      modifiedOrder.shippingInfo.deliveries.push({
+        items: [{
+          id: modifiedOrder.lineItems[0].id,
+          quantity: modifiedOrder.lineItems[0].quantity,
+        }],
+        parcels: [{
+          trackingData: {
+            trackingId: '447883009643',
+            carrier: 'dhl',
+            isReturn: false,
+          },
+        }],
+      })
+
+      return orderUpdater.processOrder(modifiedOrder)
+    })
+    .then((orderResult) => {
+      const shippingInfo = orderResult.shippingInfo
+
+      t.equal(shippingInfo.deliveries.length, 1,
+        'deliveries should have one item')
+      t.equal(shippingInfo.deliveries[0].parcels[0].trackingData.carrier, 'dhl',
+        'deliveries should have dhl parcel')
+      t.end()
+    })
+    .catch((error) => {
+      t.fail(error)
+    })
+})
+
+test('the module should add only new deliveries and parcels', (t) => {
+  let orderUpdater
+  const params = {
+    projectKey: PROJECT_KEY,
+    endpoints,
+    channel: {
+      key: channelKey,
+      role: channelRole,
+    },
+  }
+
+  setup(params)
+    .then(order =>
+      initOrderUpdate(PROJECT_KEY)
+        .then(_orderUpdater => (orderUpdater = _orderUpdater))
+        .return(order),
+    )
+    .then((order) => {
+      const modifiedOrder = Object.assign({}, order.body)
+
+      modifiedOrder.shippingInfo.deliveries.push({
+        items: [{
+          id: modifiedOrder.lineItems[0].id,
+          quantity: modifiedOrder.lineItems[0].quantity,
+        }],
+        parcels: [{
+          trackingData: {
+            trackingId: '447883009643',
+            carrier: 'dhl',
+            isReturn: false,
+          },
+        }],
+      })
+
+      return orderUpdater.processOrder(modifiedOrder)
+    })
+    .then((orderResult) => {
+      // old object
+      const lineItemId = orderResult.lineItems[0].id
+      const oldDelivery = orderResult.shippingInfo.deliveries[0]
+      // new object loaded from input JSON
+      const newOrder = orderDeliverySample
+      const newDeliveries = newOrder.shippingInfo.deliveries
+
+      // set valid IDs and orderNumber
+      newOrder.orderNumber = orderResult.orderNumber
+      newDeliveries[0].items[0].id = lineItemId
+      newDeliveries[1].items[0] = oldDelivery.items[0]
+      newDeliveries[1].id = oldDelivery.id
+      newDeliveries[1].parcels[1] = oldDelivery.parcels[0]
+
+      return orderUpdater.processOrder(newOrder)
+    })
+    .then(({ shippingInfo: { deliveries } }) => {
+      t.equal(deliveries.length, 2,
+        'deliveries should have two items')
+
+      // first delivery
+      t.equal(deliveries[0].parcels.length, 1,
+        'first delivery should have one parcel')
+      t.equal(deliveries[0].parcels[0].trackingData.carrier, 'TEST',
+        'first delivery should have correct parcel')
+
+      // second delivery
+      const parcelCarriers = deliveries[1].parcels.map(
+        parcel => parcel.trackingData.carrier,
+      )
+
+      t.equal(deliveries[1].parcels.length, 2,
+        'second delivery should have two parcels')
+      t.ok(parcelCarriers.indexOf('dhl') >= 0,
+        'second delivery should have a dhl carrier')
+      t.ok(parcelCarriers.indexOf('ppl') >= 0,
+        'second delivery should have a ppl carrier')
+
+      t.end()
+    })
+    .catch((error) => {
       t.fail(error)
     })
 })

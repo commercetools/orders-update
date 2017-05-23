@@ -1,0 +1,69 @@
+{
+  "orderNumber": "--order number--",
+  "shippingInfo": {
+    "deliveries": [
+      {
+        "id": "1",
+        "items": [
+          {
+            "id": "--item id--",
+            "quantity": 100
+          }
+        ],
+        "parcels": [
+          {
+            "id": "1",
+            "trackingData": {
+              "trackingId": "123456789",
+              "carrier": "TEST",
+              "provider": "provider 1",
+              "providerTransaction": "provider transaction 1",
+              "isReturn": false
+            },
+            "measurements": {
+              "lengthInMillimeter": 100,
+              "heightInMillimeter": 200,
+              "widthInMillimeter": 200,
+              "weightInGram": 500
+            }
+          }
+        ]
+      },
+      {
+        "id": "--delivery id--",
+        "items": [
+          {
+            "id": "--item id--",
+            "quantity": 1
+          }
+        ],
+        "parcels": [
+          {
+            "id": "222",
+            "trackingData": {
+              "trackingId": "123456789",
+              "carrier": "ppl",
+              "provider": "provider",
+              "providerTransaction": "transaction provider",
+              "isReturn": false
+            },
+            "measurements": {
+              "lengthInMillimeter": 100,
+              "heightInMillimeter": 200,
+              "widthInMillimeter": 200,
+              "weightInGram": 500
+            }
+          },
+          {
+            "id": "--parcel id--",
+            "trackingData": {
+              "trackingId": "447883009643",
+              "carrier": "dhl",
+              "isReturn": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -86,7 +86,7 @@ module.exports = {
       type: 'string',
     },
     shippingInfo: {
-      type: 'string',
+      type: 'object',
     },
     syncInfo: {
       type: 'array',

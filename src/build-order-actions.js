@@ -109,6 +109,26 @@ const buildOrderMethods = {
     return actions
       .filter(action => enabledActions.indexOf(action.action) >= 0)
   },
+
+  shippingInfo: (order, existingOrder) => {
+    const sync = new OrderSync()
+    const enabledActions = [
+      'addDelivery',
+      'addParcelToDelivery',
+    ]
+
+    const modOrder = { shippingInfo: { deliveries: [] }, ...order }
+    const modExistOrder = { shippingInfo: { deliveries: [] }, ...existingOrder }
+    const payload = sync.config()
+      .buildActions(modOrder, modExistOrder)
+      .getUpdatePayload()
+
+    const actions = (payload && payload.actions) || []
+
+    // filter only whitelisted actions
+    return actions
+      .filter(action => enabledActions.indexOf(action.action) >= 0)
+  },
 }
 
 export default buildOrderMethods
