@@ -32,6 +32,12 @@ module.exports = {
       type: 'array',
       items: {
         type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            minLength: 1,
+          },
+        },
       },
     },
     customLineItems: {

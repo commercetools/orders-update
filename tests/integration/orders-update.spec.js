@@ -158,6 +158,53 @@ test('the module should not modify an order without changes', (t) => {
     })
 })
 
+test('should throw an error when lineItemId is missing', (t) => {
+  let ordersUpdate
+  const params = {
+    projectKey: PROJECT_KEY,
+    endpoints,
+    channel: {
+      key: channelKey,
+      role: channelRole,
+    },
+  }
+
+  setup(params)
+    .then(orderResult =>
+      initOrderUpdate(PROJECT_KEY)
+        .then((_ordersUpdate) => {
+          ordersUpdate = _ordersUpdate
+          const newOrder = {
+            orderNumber: orderResult.body.orderNumber,
+            lineItems: [{
+              id: '',
+              state: [{
+                quantity: 1,
+                fromState: 'Wubalubadubdub',
+                toState: 'Meeseeks',
+                _fromStateQty: 1,
+              }],
+            }],
+          }
+          return ordersUpdate.processOrder(newOrder)
+        }),
+    )
+    .then((order) => {
+      t.equal(order, undefined)
+      t.equal(ordersUpdate.summary.errors.length, 1, 'should throw an error')
+
+      const errorDetails = ordersUpdate.summary.errors[0].error[0]
+      t.equal(errorDetails.keyword, 'minLength')
+      t.equal(errorDetails.dataPath, '.lineItems[0].id')
+
+      t.end()
+    })
+    .catch((error) => {
+      console.error(error)
+      t.fail(error)
+    })
+})
+
 test('the module should update return info', (t) => {
   let ordersUpdate
   const params = {
