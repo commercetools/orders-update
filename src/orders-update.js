@@ -137,18 +137,17 @@ export default class OrdersUpdate {
         if (total === 1) {
           const existingOrder = existingOrders[0]
           const actions = this.buildUpdateActions(order, existingOrder)
-
-          // Do not call the API when there are no changes
-          if (actions.length > 0)
-            return this.client.orders
+          if (actions.length === 0) {
+            this.logger.error(`No valid action found for ${order.orderNumber}`)
+            return order
+          }
+          return this.client.orders
               .byId(existingOrder.id)
               .update({
                 version: existingOrder.version,
                 actions,
               })
               .then(result => result.body)
-
-          return order
         }
 
         return Promise.reject(Object.assign(
