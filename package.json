@@ -1,6 +1,6 @@
 {
   "name": "@commercetools/orders-update",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "Library that helps with updating orders into the commercetools platform.",
   "keywords": [
     "commercetools",
